@@ -54,7 +54,7 @@ public class Product
     @ElementCollection
     @CollectionTable(name = "product_specifications", joinColumns = @JoinColumn(name = "product_id"))
     @Column(name = "specifications")
-    private Set<String> specifications;
+    private Set<Specification> specifications;
 
 
 
