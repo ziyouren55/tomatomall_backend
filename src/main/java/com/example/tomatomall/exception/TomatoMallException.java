@@ -1,0 +1,45 @@
+package com.example.tomatomall.exception;
+
+/**
+ * @Author: DingXiaoyu
+ * @Date: 0:26 2023/11/26
+ * 你可以在这里自定义Exception
+*/
+public class TomatoMallException extends RuntimeException{
+
+    public TomatoMallException(String message){
+        super(message);
+    }
+    public static TomatoMallException usernameAlreadyExists(){
+        return new TomatoMallException("用户名已经存在!");
+    }
+
+    public static TomatoMallException usernameNotFind(){return new TomatoMallException("用户未找到!");}
+
+    public static TomatoMallException passwordError(){return new TomatoMallException("密码错误!");}
+
+    public static TomatoMallException notLogin(){
+        return new TomatoMallException("未登录!");
+    }
+
+    public static TomatoMallException lackOfUsername(){
+        return new TomatoMallException("缺少用户名!");
+    }
+
+    public static TomatoMallException phoneOrPasswordError(){
+        return new TomatoMallException("手机号或密码错误!");
+    }
+
+    public static TomatoMallException storeAlreadyExists(){
+        return new TomatoMallException("该商店已经存在!");
+    }
+
+    public static TomatoMallException storeNotFind(){
+        return new TomatoMallException("未找到商店!");
+    }
+
+    public static TomatoMallException productAlreadyExists(){
+        return new TomatoMallException("该商品已经存在!");
+    }
+
+}
