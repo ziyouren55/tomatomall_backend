@@ -38,7 +38,7 @@ public class TokenUtil {
     public boolean verifyToken(String token) {
         try {
             int userId=Integer.parseInt(JWT.decode(token).getAudience().get(0));
-            Account user= accountRepository.findById((long) userId).get();
+            Account user= accountRepository.findById(userId).get();
             JWTVerifier jwtVerifier = JWT.require(Algorithm.HMAC256(user.getPassword())).build();
             jwtVerifier.verify(token);
             return true;
@@ -49,6 +49,6 @@ public class TokenUtil {
 
     public Account getAccount(String token){
         int userId=Integer.parseInt(JWT.decode(token).getAudience().get(0));
-        return accountRepository.findById((long) userId).get();
+        return accountRepository.findById(userId).get();
     }
 }

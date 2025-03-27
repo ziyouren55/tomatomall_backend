@@ -11,7 +11,7 @@ import lombok.Setter;
 public class AccountVO
 {
 
-    private Long id;
+    private Integer id;
     private String username;
     private String password;
     private String name;

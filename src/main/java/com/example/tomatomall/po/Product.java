@@ -1,9 +1,11 @@
 package com.example.tomatomall.po;
 
 
+import com.example.tomatomall.vo.ProductVO;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
+import org.springframework.security.core.parameters.P;
 
 import javax.persistence.*;
 import javax.validation.constraints.Min;
@@ -56,6 +58,19 @@ public class Product
     @Column(name = "specifications")
     private Set<Specification> specifications;
 
+    public ProductVO toVO()
+    {
+        ProductVO productVO = new ProductVO();
+        productVO.setId(id);
+        productVO.setTitle(title);
+        productVO.setPrice(price);
+        productVO.setRate(rate);
+        productVO.setDescription(description);
+        productVO.setCover(cover);
+        productVO.setDetail(detail);
+        productVO.setSpecifications(specifications);
 
+        return productVO;
+    }
 
 }

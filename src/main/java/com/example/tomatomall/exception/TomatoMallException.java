@@ -42,4 +42,9 @@ public class TomatoMallException extends RuntimeException{
         return new TomatoMallException("该商品已经存在!");
     }
 
+    public static TomatoMallException productNotFind(){
+        return new TomatoMallException("未找到商品!");
+    }
+
+
 }

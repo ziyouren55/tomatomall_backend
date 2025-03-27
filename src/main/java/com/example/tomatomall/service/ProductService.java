@@ -17,7 +17,7 @@ public interface ProductService
 
     String deleteProduct(String id);
 
-    String updateStockpile(String productId, Integer amount);
+    String updateProductStockpile(String productId, Integer amount);
 
     StockpileVO getProductStockpile(String productId);
 
