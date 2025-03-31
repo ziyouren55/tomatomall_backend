@@ -1,11 +1,10 @@
-package com.example.tomatomall.vo;
+package com.example.tomatomall.vo.products;
 
 import com.example.tomatomall.po.Product;
 import com.example.tomatomall.po.Specification;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
-import org.springframework.security.core.parameters.P;
 
 import java.util.Set;
 @Setter

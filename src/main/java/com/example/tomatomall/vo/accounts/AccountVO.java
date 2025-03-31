@@ -1,4 +1,4 @@
-package com.example.tomatomall.vo;
+package com.example.tomatomall.vo.accounts;
 
 import com.example.tomatomall.po.Account;
 import lombok.Getter;

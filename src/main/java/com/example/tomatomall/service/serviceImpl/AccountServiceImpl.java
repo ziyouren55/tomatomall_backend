@@ -6,7 +6,7 @@ import com.example.tomatomall.repository.AccountRepository;
 import com.example.tomatomall.service.AccountService;
 import com.example.tomatomall.util.MyBeanUtil;
 import com.example.tomatomall.util.TokenUtil;
-import com.example.tomatomall.vo.AccountVO;
+import com.example.tomatomall.vo.accounts.AccountVO;
 import org.springframework.beans.BeanUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.crypto.password.PasswordEncoder;
@@ -29,7 +29,7 @@ public class AccountServiceImpl implements AccountService {
 
 
     @Override
-    public Boolean register(AccountVO accountVO)
+    public String register(AccountVO accountVO)
     {
         Account account = accountRepository.findByUsername(accountVO.getUsername());
         if (account != null) {
@@ -43,16 +43,16 @@ public class AccountServiceImpl implements AccountService {
         newAccount.setCreateTime(new Date());
         newAccount.setPassword(encodedPassword);
         accountRepository.save(newAccount);
-        return true;
+        return "注册成功";
     }
 
     @Override
-    public String login(String username, String password)
+    public String login(AccountVO accountVO)
     {
-        Account account = accountRepository.findByUsername(username);
+        Account account = accountRepository.findByUsername(accountVO.getUsername());
         if (account != null) {
             // 使用 passwordEncoder 比较原始密码和数据库中加密后的密码
-           if(passwordEncoder.matches(password, account.getPassword()))
+           if(passwordEncoder.matches(accountVO.getPassword(), account.getPassword()))
                return tokenUtil.getToken(account);
            else
                throw  TomatoMallException.passwordError();
@@ -72,7 +72,7 @@ public class AccountServiceImpl implements AccountService {
     }
 
     @Override
-    public Boolean updateUser(AccountVO accountVO)
+    public AccountVO updateUser(AccountVO accountVO)
     {
         Account account = accountRepository.findByUsername(accountVO.getUsername());
         if(account == null)
@@ -85,6 +85,11 @@ public class AccountServiceImpl implements AccountService {
 
         BeanUtils.copyProperties(accountVO,account, MyBeanUtil.getNullPropertyNames(accountVO));
 
-        return true;
+        if(accountVO.getPassword() != null)
+            account.setPassword(passwordEncoder.encode(account.getPassword()));
+
+        accountRepository.save(account);
+
+        return account.toVO();
     }
 }

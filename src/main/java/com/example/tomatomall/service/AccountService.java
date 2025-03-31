@@ -1,15 +1,15 @@
 package com.example.tomatomall.service;
 
-import com.example.tomatomall.vo.AccountVO;
+import com.example.tomatomall.vo.accounts.AccountVO;
 
 public interface AccountService {
 
-    Boolean register(AccountVO accountVO);
+    String register(AccountVO accountVO);
 
-    String login(String username,String password);
+    String login(AccountVO accountVO);
 
     AccountVO getUser(String username);
 
-    Boolean updateUser(AccountVO accountVO);
+    AccountVO updateUser(AccountVO accountVO);
 
 }

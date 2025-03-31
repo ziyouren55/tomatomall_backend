@@ -5,16 +5,18 @@ package com.example.tomatomall.exception;
  * @Date: 0:26 2023/11/26
  * 你可以在这里自定义Exception
 */
+
+//TODO 在每个类型里添加错误码
 public class TomatoMallException extends RuntimeException{
 
     public TomatoMallException(String message){
         super(message);
     }
     public static TomatoMallException usernameAlreadyExists(){
-        return new TomatoMallException("用户名已经存在!");
+        return new TomatoMallException("用户名已存在");
     }
 
-    public static TomatoMallException usernameNotFind(){return new TomatoMallException("用户未找到!");}
+    public static TomatoMallException usernameNotFind(){return new TomatoMallException("用户不存在");}
 
     public static TomatoMallException passwordError(){return new TomatoMallException("密码错误!");}
 
@@ -43,7 +45,7 @@ public class TomatoMallException extends RuntimeException{
     }
 
     public static TomatoMallException productNotFind(){
-        return new TomatoMallException("未找到商品!");
+        return new TomatoMallException("商品不存在");
     }
 
 

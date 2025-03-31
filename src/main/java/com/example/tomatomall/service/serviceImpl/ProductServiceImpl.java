@@ -2,10 +2,14 @@ package com.example.tomatomall.service.serviceImpl;
 
 import com.example.tomatomall.exception.TomatoMallException;
 import com.example.tomatomall.po.Product;
+import com.example.tomatomall.po.Stockpile;
 import com.example.tomatomall.repository.ProductRepository;
+import com.example.tomatomall.repository.StockpileRepository;
 import com.example.tomatomall.service.ProductService;
-import com.example.tomatomall.vo.ProductVO;
-import com.example.tomatomall.vo.StockpileVO;
+import com.example.tomatomall.util.MyBeanUtil;
+import com.example.tomatomall.vo.products.ProductVO;
+import com.example.tomatomall.vo.products.StockpileVO;
+import org.springframework.beans.BeanUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
@@ -18,6 +22,9 @@ public class ProductServiceImpl implements ProductService
 {
     @Autowired
     ProductRepository productRepository;
+
+    @Autowired
+    StockpileRepository stockpileRepository;
 
 
     @Override
@@ -39,30 +46,56 @@ public class ProductServiceImpl implements ProductService
     @Override
     public String updateProduct(ProductVO productVO)
     {
-        return "";
+        Optional<Product> product = productRepository.findById(String.valueOf(productVO.getId()));
+        if(!product.isPresent())
+        {
+            throw TomatoMallException.productNotFind();
+        }
+        BeanUtils.copyProperties(productVO,product, MyBeanUtil.getNullPropertyNames(productVO));
+        return "更新成功";
     }
 
     @Override
     public ProductVO createProduct(ProductVO productVO)
     {
-        return null;
+        Product product = productRepository.findByTitle(productVO.getTitle());
+        if(product != null)
+        {
+            throw TomatoMallException.productAlreadyExists();
+        }
+        Product newProduct = productVO.toPO();
+        productRepository.save(newProduct);
+
+        return newProduct.toVO();
     }
 
     @Override
     public String deleteProduct(String id)
     {
-        return "";
+        Optional<Product> product = productRepository.findById(id);
+        if(!product.isPresent())
+            throw TomatoMallException.productNotFind();
+        productRepository.deleteById(id);
+        return "删除成功";
     }
 
     @Override
     public String updateProductStockpile(String productId, Integer amount)
     {
-        return "";
+        Stockpile stockpile = stockpileRepository.findByProductId(productId);
+        if(stockpile == null)
+            throw TomatoMallException.productNotFind();
+        stockpile.setAmount(amount);
+        return "调整库存成功";
     }
 
     @Override
     public StockpileVO getProductStockpile(String productId)
     {
-        return null;
+        Stockpile stockpile = stockpileRepository.findByProductId(productId);
+        if(stockpile != null)
+            return stockpile.toVO();
+        else
+            throw TomatoMallException.productNotFind();
     }
 }

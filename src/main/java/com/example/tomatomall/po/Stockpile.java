@@ -1,6 +1,7 @@
 package com.example.tomatomall.po;
 
 
+import com.example.tomatomall.vo.products.StockpileVO;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
@@ -31,5 +32,16 @@ public class Stockpile
     @NotNull
     @NotNull
     private Integer frozen;
+
+    public StockpileVO toVO()
+    {
+        StockpileVO stockpileVO = new StockpileVO();
+        stockpileVO.setId(id);
+        stockpileVO.setFrozen(frozen);
+        stockpileVO.setAmount(amount);
+        stockpileVO.setProductId(productId);
+
+        return stockpileVO;
+    }
 
 }

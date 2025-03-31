@@ -1,6 +1,6 @@
 package com.example.tomatomall.po;
 
-import com.example.tomatomall.vo.AccountVO;
+import com.example.tomatomall.vo.accounts.AccountVO;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;

@@ -1,4 +1,4 @@
-package com.example.tomatomall.vo;
+package com.example.tomatomall.vo.products;
 
 
 import lombok.Getter;
@@ -8,11 +8,10 @@ import lombok.Setter;
 @Setter
 @Getter
 @NoArgsConstructor
-public class StockpileVO
+public class SpecificationVO
 {
     private String id;
+    private String item;
+    private String value;
     private String productId;
-    private Integer amount;
-    private Integer frozen;
-
 }

@@ -1,7 +1,7 @@
 package com.example.tomatomall.service;
 
-import com.example.tomatomall.vo.ProductVO;
-import com.example.tomatomall.vo.StockpileVO;
+import com.example.tomatomall.vo.products.ProductVO;
+import com.example.tomatomall.vo.products.StockpileVO;
 
 import java.util.List;
 

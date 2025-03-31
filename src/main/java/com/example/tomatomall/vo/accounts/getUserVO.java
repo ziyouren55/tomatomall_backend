@@ -1,4 +1,4 @@
-package com.example.tomatomall.vo;
+package com.example.tomatomall.vo.accounts;
 
 import lombok.Getter;
 import lombok.NoArgsConstructor;

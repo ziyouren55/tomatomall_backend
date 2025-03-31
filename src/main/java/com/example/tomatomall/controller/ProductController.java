@@ -2,7 +2,7 @@ package com.example.tomatomall.controller;
 
 
 import com.example.tomatomall.service.ProductService;
-import com.example.tomatomall.vo.ProductVO;
+import com.example.tomatomall.vo.products.ProductVO;
 import com.example.tomatomall.vo.Response;
 import org.springframework.web.bind.annotation.*;
 
@@ -20,8 +20,8 @@ public class ProductController
         return Response.buildSuccess(productService.getProductList());
     }
 
-    @GetMapping
-    public Response getProduct(@RequestParam("id") String id)
+    @GetMapping("/{id}")
+    public Response getProduct(@PathVariable String id)
     {
         return Response.buildSuccess(productService.getProduct(id));
     }

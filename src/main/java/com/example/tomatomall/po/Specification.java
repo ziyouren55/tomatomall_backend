@@ -29,8 +29,7 @@ public class Specification
     private String value;
 
     // 多对一关联，规格必须属于一个商品
-    @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "product_id", nullable = false)
+    @Column(name = "product_id", nullable = false)
     @NotBlank
     private String productId;
 
