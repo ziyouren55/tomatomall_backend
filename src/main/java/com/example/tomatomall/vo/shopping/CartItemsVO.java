@@ -10,9 +10,9 @@ import java.util.List;
 @Setter
 @Getter
 @NoArgsConstructor
-public class CartResponse
+public class CartItemsVO
 {
-    private List<CartItemResponse> cartItems;
+    private List<CartItemVO> cartItems;
     private Integer total;
     private Double totalAmount;
 }

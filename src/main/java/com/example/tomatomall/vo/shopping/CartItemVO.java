@@ -7,7 +7,7 @@ import lombok.Setter;
 @Getter
 @Setter
 @NoArgsConstructor
-public class CartItemResponse
+public class CartItemVO
 {
     private String cartItemId;
     private String productId;
