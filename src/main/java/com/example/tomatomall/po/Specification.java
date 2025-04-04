@@ -18,7 +18,7 @@ import javax.validation.constraints.NotNull;
 public class Specification
 {
     @Id
-    private String id;
+    private Integer id;
 
     @Column(nullable = false)
     @NotBlank
@@ -31,6 +31,6 @@ public class Specification
     // 多对一关联，规格必须属于一个商品
     @Column(name = "product_id", nullable = false)
     @NotBlank
-    private String productId;
+    private Integer productId;
 
 }

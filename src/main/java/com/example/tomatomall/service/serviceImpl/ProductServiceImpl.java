@@ -2,6 +2,7 @@ package com.example.tomatomall.service.serviceImpl;
 
 import com.example.tomatomall.exception.TomatoMallException;
 import com.example.tomatomall.po.Product;
+import com.example.tomatomall.po.Specification;
 import com.example.tomatomall.po.Stockpile;
 import com.example.tomatomall.repository.ProductRepository;
 import com.example.tomatomall.repository.StockpileRepository;
@@ -12,9 +13,11 @@ import com.example.tomatomall.vo.products.StockpileVO;
 import org.springframework.beans.BeanUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
 import java.util.Optional;
+import java.util.Set;
 import java.util.stream.Collectors;
 
 @Service
@@ -34,7 +37,7 @@ public class ProductServiceImpl implements ProductService
     }
 
     @Override
-    public ProductVO getProduct(String id)
+    public ProductVO getProduct(Integer id)
     {
         Optional<Product> product = productRepository.findById(id);
         if(product.isPresent())
@@ -46,12 +49,13 @@ public class ProductServiceImpl implements ProductService
     @Override
     public String updateProduct(ProductVO productVO)
     {
-        Optional<Product> product = productRepository.findById(String.valueOf(productVO.getId()));
+        Optional<Product> product = productRepository.findById(productVO.getId());
         if(!product.isPresent())
         {
             throw TomatoMallException.productNotFind();
         }
-        BeanUtils.copyProperties(productVO,product, MyBeanUtil.getNullPropertyNames(productVO));
+        BeanUtils.copyProperties(productVO,product.get(), MyBeanUtil.getNullPropertyNames(productVO));
+        productRepository.save(product.get());
         return "更新成功";
     }
 
@@ -65,12 +69,26 @@ public class ProductServiceImpl implements ProductService
         }
         Product newProduct = productVO.toPO();
         productRepository.save(newProduct);
+        Stockpile stockpile = stockpileRepository.findByProductId(productVO.getId());
+        if(stockpile != null)
+            stockpile.setAmount(stockpile.getAmount() + 1);
+        else
+        {
+            StockpileVO stockpileVO = new StockpileVO();
+            stockpileVO.setId((int) (System.currentTimeMillis() % Integer.MAX_VALUE));
+            stockpileVO.setProductId(newProduct.getId());
+            stockpileVO.setAmount(1);
+            stockpileVO.setFrozen(0);
+            stockpileRepository.save(stockpileVO.toPO());
+        }
+
 
         return newProduct.toVO();
     }
 
     @Override
-    public String deleteProduct(String id)
+    @Transactional
+    public String deleteProduct(Integer id)
     {
         Optional<Product> product = productRepository.findById(id);
         if(!product.isPresent())
@@ -80,17 +98,18 @@ public class ProductServiceImpl implements ProductService
     }
 
     @Override
-    public String updateProductStockpile(String productId, Integer amount)
+    public String updateProductStockpile(Integer productId, Integer amount)
     {
         Stockpile stockpile = stockpileRepository.findByProductId(productId);
         if(stockpile == null)
             throw TomatoMallException.productNotFind();
         stockpile.setAmount(amount);
+        stockpileRepository.save(stockpile);
         return "调整库存成功";
     }
 
     @Override
-    public StockpileVO getProductStockpile(String productId)
+    public StockpileVO getProductStockpile(Integer productId)
     {
         Stockpile stockpile = stockpileRepository.findByProductId(productId);
         if(stockpile != null)

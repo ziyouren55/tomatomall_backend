@@ -10,8 +10,8 @@ import lombok.Setter;
 @NoArgsConstructor
 public class SpecificationVO
 {
-    private String id;
+    private Integer id;
     private String item;
     private String value;
-    private String productId;
+    private Integer productId;
 }

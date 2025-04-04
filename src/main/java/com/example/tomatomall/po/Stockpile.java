@@ -18,18 +18,17 @@ import javax.validation.constraints.NotNull;
 public class Stockpile
 {
     @Id
-    private String id;
+    private Integer id;
 
     @Column(name = "product_id")
-    @NotBlank
-    private String productId;
+    @NotNull
+    private Integer productId;
 
     // 可卖库存
     @NotNull
     private Integer amount;
 
     // 冻结库存
-    @NotNull
     @NotNull
     private Integer frozen;
 

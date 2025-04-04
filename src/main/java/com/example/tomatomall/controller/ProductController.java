@@ -1,17 +1,22 @@
 package com.example.tomatomall.controller;
 
 
+import com.example.tomatomall.repository.StockpileRepository;
 import com.example.tomatomall.service.ProductService;
 import com.example.tomatomall.vo.products.ProductVO;
 import com.example.tomatomall.vo.Response;
+import com.example.tomatomall.vo.products.StockpileVO;
 import org.springframework.web.bind.annotation.*;
 
 import javax.annotation.Resource;
+import java.util.Map;
 
 @RestController
 @RequestMapping("/api/products")
 public class ProductController
 {
+    StockpileRepository stockpileRepository;
+
     @Resource
     ProductService productService;
 
@@ -21,7 +26,7 @@ public class ProductController
     }
 
     @GetMapping("/{id}")
-    public Response getProduct(@PathVariable String id)
+    public Response getProduct(@PathVariable Integer id)
     {
         return Response.buildSuccess(productService.getProduct(id));
     }
@@ -36,19 +41,21 @@ public class ProductController
         return Response.buildSuccess(productService.createProduct(productVO));
     }
 
-    @DeleteMapping()
-    public Response deleteProduct(@RequestParam("id") String id){
+    @DeleteMapping("/{id}")
+    public Response deleteProduct(@PathVariable("id") Integer id) {
         return Response.buildSuccess(productService.deleteProduct(id));
     }
 
-    @PatchMapping("/stockpile")
-    public Response updateProductStockpile(@RequestParam("productId") String productId, @RequestParam("amount") Integer amount)
-    {
-        return Response.buildSuccess(productService.updateProductStockpile(productId,amount));
+    @PatchMapping("/stockpile/{productId}")
+    public Response updateProductStockpile(@PathVariable("productId") Integer productId, @RequestBody Map<String, Integer> body) {
+        Integer amount = body.get("amount");
+        return Response.buildSuccess(productService.updateProductStockpile(productId, amount));
     }
 
-    @GetMapping("/stockpile")
-    public Response getProductStockpile(@RequestParam("productId") String productId)
+
+
+    @GetMapping("/stockpile/{productId}")
+    public Response getProductStockpile(@PathVariable("productId") Integer productId)
     {
         return Response.buildSuccess(productService.getProductStockpile(productId));
     }
