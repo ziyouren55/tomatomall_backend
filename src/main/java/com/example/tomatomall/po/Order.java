@@ -1,6 +1,7 @@
 package com.example.tomatomall.po;
 
 import com.example.tomatomall.enums.OrderStatus;
+import com.example.tomatomall.vo.shopping.OrderVO;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
@@ -35,4 +36,17 @@ public class Order
 
     @Column(name = "create_time", columnDefinition = "TIMESTAMP DEFAULT CURRENT_TIMESTAMP COMMENT '订单创建时间'")
     private Timestamp createTime;
+
+    public OrderVO toVO()
+    {
+        OrderVO orderVO = new OrderVO();
+        orderVO.setOrderId(orderId);
+        orderVO.setStatus(status);
+        orderVO.setCreateTime(createTime);
+        orderVO.setPaymentMethod(paymentMethod);
+        orderVO.setUserId(userId);
+        orderVO.setTotalAmount(totalAmount);
+
+        return orderVO;
+    }
 }
