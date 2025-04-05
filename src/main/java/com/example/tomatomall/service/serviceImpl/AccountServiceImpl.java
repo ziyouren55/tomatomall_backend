@@ -2,8 +2,11 @@ package com.example.tomatomall.service.serviceImpl;
 
 import com.example.tomatomall.exception.TomatoMallException;
 import com.example.tomatomall.po.Account;
+import com.example.tomatomall.po.Cart;
 import com.example.tomatomall.repository.AccountRepository;
+import com.example.tomatomall.repository.CartRepository;
 import com.example.tomatomall.service.AccountService;
+import com.example.tomatomall.service.CartService;
 import com.example.tomatomall.util.MyBeanUtil;
 import com.example.tomatomall.util.TokenUtil;
 import com.example.tomatomall.vo.accounts.AccountVO;
@@ -26,7 +29,8 @@ public class AccountServiceImpl implements AccountService {
     @Autowired
     TokenUtil tokenUtil;
 
-
+    @Autowired
+    CartRepository cartRepository;
 
     @Override
     public String register(AccountVO accountVO)
@@ -43,6 +47,7 @@ public class AccountServiceImpl implements AccountService {
         newAccount.setCreateTime(new Date());
         newAccount.setPassword(encodedPassword);
         accountRepository.save(newAccount);
+
         return "注册成功";
     }
 

@@ -3,7 +3,10 @@ package com.example.tomatomall.repository;
 import com.example.tomatomall.po.Cart;
 import org.springframework.data.jpa.repository.JpaRepository;
 
-public interface CartRepository extends JpaRepository<String, Cart>
+import java.util.Optional;
+
+public interface CartRepository extends JpaRepository<Cart,Integer>
 {
-    Cart findByCartItemId(String cartItemId);
+    Cart findByCartItemId(Integer cartItemId);
+    Optional<Cart> findByUserIdAndProductId(Integer userId, Integer productId);
 }

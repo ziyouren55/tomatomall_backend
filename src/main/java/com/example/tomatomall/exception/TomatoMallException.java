@@ -48,5 +48,9 @@ public class TomatoMallException extends RuntimeException{
         return new TomatoMallException("商品不存在");
     }
 
+    public static TomatoMallException cartItemNotFind(){return new TomatoMallException("购物车中不存在该商品");}
+
+    public static TomatoMallException cartItemAlreadyExists(){return new TomatoMallException("购物车中已存在该商品");}
+
 
 }

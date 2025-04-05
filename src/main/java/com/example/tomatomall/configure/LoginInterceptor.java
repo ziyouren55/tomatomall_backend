@@ -1,6 +1,7 @@
 package com.example.tomatomall.configure;
 
 import com.example.tomatomall.exception.TomatoMallException;
+import com.example.tomatomall.po.Account;
 import com.example.tomatomall.util.TokenUtil;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
@@ -39,7 +40,9 @@ public class LoginInterceptor implements HandlerInterceptor
         String token = request.getHeader("token");
         if (token != null && tokenUtil.verifyToken(token))
         {
-            request.getSession().setAttribute("currentUser", tokenUtil.getAccount(token));
+            Account account = tokenUtil.getAccount(token);
+            request.getSession().setAttribute("currentUser", account);
+            request.setAttribute("userId",account.getId());
             return true;
         }
         else
