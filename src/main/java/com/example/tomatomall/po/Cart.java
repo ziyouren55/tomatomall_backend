@@ -1,5 +1,7 @@
 package com.example.tomatomall.po;
 
+import com.example.tomatomall.vo.shopping.CartItemVO;
+import com.example.tomatomall.vo.shopping.CartItemsVO;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;

@@ -7,6 +7,7 @@ import com.example.tomatomall.service.CartService;
 import com.example.tomatomall.vo.Response;
 import com.example.tomatomall.vo.shopping.CartItemVO;
 import com.example.tomatomall.vo.shopping.CartItemsVO;
+import com.example.tomatomall.vo.shopping.UpdateQuantityVO;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.core.parameters.P;
 import org.springframework.web.bind.annotation.*;
@@ -34,9 +35,9 @@ public class CartController
     }
 
     @PatchMapping("/{cartItemId}")
-    public Response updateCartItemQuantity(@PathVariable String cartItemId,@RequestBody CartItemVO cartItemVO,@RequestAttribute("userId") Integer userId)
+    public Response updateCartItemQuantity(@PathVariable String cartItemId, @RequestBody UpdateQuantityVO updateQuantityVO, @RequestAttribute("userId") Integer userId)
     {
-        return Response.buildSuccess(cartService.updateCartItemQuantity(cartItemId,cartItemVO,userId));
+        return Response.buildSuccess(cartService.updateCartItemQuantity(cartItemId,updateQuantityVO,userId));
     }
 
     @GetMapping()

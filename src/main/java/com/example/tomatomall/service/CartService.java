@@ -2,6 +2,7 @@ package com.example.tomatomall.service;
 
 import com.example.tomatomall.vo.shopping.CartItemVO;
 import com.example.tomatomall.vo.shopping.CartItemsVO;
+import com.example.tomatomall.vo.shopping.UpdateQuantityVO;
 
 public interface CartService
 {
@@ -9,7 +10,7 @@ public interface CartService
 
     String deleteProductFromCart(String cartItemId, Integer userId);
 
-    String updateCartItemQuantity(String cartItemId,CartItemVO cartItemVO,Integer userId);
+    String updateCartItemQuantity(String cartItemId, UpdateQuantityVO updateQuantityVO, Integer userId);
 
     CartItemsVO getProductListFromCart(Integer userId);
 }

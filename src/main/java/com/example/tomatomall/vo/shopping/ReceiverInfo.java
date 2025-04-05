@@ -7,7 +7,7 @@ import lombok.Setter;
 @Getter
 @Setter
 @NoArgsConstructor
-public class receiverInfo
+public class ReceiverInfo
 {
     private Integer userId;
     private String receiverName;
