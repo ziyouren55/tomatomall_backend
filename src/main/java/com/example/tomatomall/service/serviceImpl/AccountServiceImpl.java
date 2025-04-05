@@ -16,6 +16,7 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
 import java.util.Date;
+import java.util.Optional;
 
 @Service
 public class AccountServiceImpl implements AccountService {
@@ -35,8 +36,8 @@ public class AccountServiceImpl implements AccountService {
     @Override
     public String register(AccountVO accountVO)
     {
-        Account account = accountRepository.findByUsername(accountVO.getUsername());
-        if (account != null) {
+        Optional<Account> account = accountRepository.findByUsername(accountVO.getUsername());
+        if (account.isPresent()) {
             throw TomatoMallException.usernameAlreadyExists();
         }
 
@@ -54,11 +55,11 @@ public class AccountServiceImpl implements AccountService {
     @Override
     public String login(AccountVO accountVO)
     {
-        Account account = accountRepository.findByUsername(accountVO.getUsername());
-        if (account != null) {
+        Optional<Account> account = accountRepository.findByUsername(accountVO.getUsername());
+        if (account.isPresent()) {
             // 使用 passwordEncoder 比较原始密码和数据库中加密后的密码
-           if(passwordEncoder.matches(accountVO.getPassword(), account.getPassword()))
-               return tokenUtil.getToken(account);
+           if(passwordEncoder.matches(accountVO.getPassword(), account.get().getPassword()))
+               return tokenUtil.getToken(account.get());
            else
                throw  TomatoMallException.passwordError();
         }
@@ -69,9 +70,9 @@ public class AccountServiceImpl implements AccountService {
     @Override
     public AccountVO getUser(String username)
     {
-        Account account = accountRepository.findByUsername(username);
-        if(account != null)
-            return account.toVO();
+        Optional<Account> account = accountRepository.findByUsername(username);
+        if(account.isPresent())
+            return account.get().toVO();
         else
             throw  TomatoMallException.usernameNotFind();
     }
@@ -79,13 +80,14 @@ public class AccountServiceImpl implements AccountService {
     @Override
     public AccountVO updateUser(AccountVO accountVO)
     {
-        Account account = accountRepository.findByUsername(accountVO.getUsername());
-        if(account == null)
+        Optional<Account> opAccount = accountRepository.findByUsername(accountVO.getUsername());
+        if(!opAccount.isPresent())
             throw TomatoMallException.usernameNotFind();
         if(accountVO.getUsername() == null)
         {
             throw TomatoMallException.lackOfUsername();
         }
+        Account account = opAccount.get();
         account.setUsername(accountVO.getUsername());
 
         BeanUtils.copyProperties(accountVO,account, MyBeanUtil.getNullPropertyNames(accountVO));

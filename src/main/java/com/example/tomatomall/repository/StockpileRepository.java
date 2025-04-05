@@ -7,5 +7,5 @@ import java.util.Optional;
 
 public interface StockpileRepository extends JpaRepository<Stockpile,Integer>
 {
-    Stockpile findByProductId(Integer productId);
+    Optional<Stockpile> findByProductId(Integer productId);
 }

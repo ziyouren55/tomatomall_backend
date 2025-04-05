@@ -60,16 +60,16 @@ public class ProductServiceImpl implements ProductService
     @Override
     public ProductVO createProduct(ProductVO productVO)
     {
-        Product product = productRepository.findByTitle(productVO.getTitle());
-        if(product != null)
+        Optional<Product> product = productRepository.findByTitle(productVO.getTitle());
+        if(product.isPresent())
         {
             throw TomatoMallException.productAlreadyExists();
         }
         Product newProduct = productVO.toPO();
         productRepository.save(newProduct);
-        Stockpile stockpile = stockpileRepository.findByProductId(productVO.getId());
-        if(stockpile != null)
-            stockpile.setAmount(stockpile.getAmount() + 1);
+        Optional<Stockpile> stockpile = stockpileRepository.findByProductId(productVO.getId());
+        if(stockpile.isPresent())
+            stockpile.get().setAmount(stockpile.get().getAmount() + 1);
         else
         {
             StockpileVO stockpileVO = new StockpileVO();
@@ -98,20 +98,20 @@ public class ProductServiceImpl implements ProductService
     @Override
     public String updateProductStockpile(Integer productId, Integer amount)
     {
-        Stockpile stockpile = stockpileRepository.findByProductId(productId);
-        if(stockpile == null)
+        Optional<Stockpile> stockpile = stockpileRepository.findByProductId(productId);
+        if(!stockpile.isPresent())
             throw TomatoMallException.productNotFind();
-        stockpile.setAmount(amount);
-        stockpileRepository.save(stockpile);
+        stockpile.get().setAmount(amount);
+        stockpileRepository.save(stockpile.get());
         return "调整库存成功";
     }
 
     @Override
     public StockpileVO getProductStockpile(Integer productId)
     {
-        Stockpile stockpile = stockpileRepository.findByProductId(productId);
-        if(stockpile != null)
-            return stockpile.toVO();
+        Optional<Stockpile> stockpile = stockpileRepository.findByProductId(productId);
+        if(stockpile.isPresent())
+            return stockpile.get().toVO();
         else
             throw TomatoMallException.productNotFind();
     }
