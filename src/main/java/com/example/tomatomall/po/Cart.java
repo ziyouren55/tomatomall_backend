@@ -21,15 +21,11 @@ public class Cart
         columnDefinition = "INT COMMENT '购物车商品id'")
     private Integer cartItemId;
 
-    @ManyToOne
-    @JoinColumn(name = "userId", nullable = false,
-        foreignKey = @ForeignKey(name = "fk_cart_user"),
+    @Column(name = "userId", nullable = false,
         columnDefinition = "INT COMMENT '用户id，关联用户表'")
     private Integer userId;
 
-    @ManyToOne
-    @JoinColumn(name = "product_id",nullable = false,
-        foreignKey = @ForeignKey(name = "fk_cart_product"),
+    @Column(name = "product_id",nullable = false,
         columnDefinition = "INT COMMENT '商品id，关联商品表'")
     private Integer productId;
 

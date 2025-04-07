@@ -14,6 +14,7 @@ import java.sql.Timestamp;
 @Setter
 @NoArgsConstructor
 @Entity
+@Table(name = "orders")
 public class Order
 {
     @Id
