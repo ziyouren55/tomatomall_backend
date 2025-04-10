@@ -10,5 +10,4 @@ public class TomatoMallApplication {
         SpringApplication.run(TomatoMallApplication.class, args);
     }
 
-
 }
