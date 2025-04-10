@@ -32,4 +32,14 @@ public class Cart
     @Column(name = "quantity", nullable = false,
         columnDefinition = "INT DEFAULT 1 COMMENT '商品数量，默认为1'")
     private Integer quantity = 1;
+
+//    @ManyToOne(cascade = CascadeType.ALL)
+//    @JoinColumn(name = "account",nullable = false,
+//            foreignKey = @ForeignKey(name = "fk_user_cart"))
+//    private Account account;
+//
+//    @ManyToOne(cascade = CascadeType.ALL)
+//    @JoinColumn(name = "product", nullable = false,
+//            foreignKey = @ForeignKey(name = "fk_product_cart"))
+//    private Product product;
 }

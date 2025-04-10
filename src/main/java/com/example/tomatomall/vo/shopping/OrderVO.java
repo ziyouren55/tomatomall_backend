@@ -16,6 +16,7 @@ public class OrderVO
     private Integer userId;
     private BigDecimal totalAmount;
     private String paymentMethod;
-    private String status;
     private Timestamp createTime;
+    private String status;
+
 }
