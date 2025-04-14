@@ -11,5 +11,6 @@ src/main/resources/application.yml
 
 # 忽略 idea 的项目文件
 .idea/
+*.iml
 # 忽略编译产物
 /target/
