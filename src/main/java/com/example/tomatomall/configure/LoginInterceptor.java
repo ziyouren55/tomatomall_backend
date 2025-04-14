@@ -43,6 +43,7 @@ public class LoginInterceptor implements HandlerInterceptor
             Account account = tokenUtil.getAccount(token);
             request.getSession().setAttribute("currentUser", account);
             request.setAttribute("userId",account.getId());
+            request.setAttribute("username",account.getUsername());
             return true;
         }
         else

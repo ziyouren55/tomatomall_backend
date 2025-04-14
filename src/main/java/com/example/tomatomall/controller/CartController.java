@@ -47,7 +47,7 @@ public class CartController
         return Response.buildSuccess(cartService.getProductListFromCart(userId));
     }
 
-    @PostMapping("/checkout/{cartItemIds}/{shipping_address}/{payment_method}")
+    @PostMapping("/checkout")
     public Response submitOrder(@PathVariable List<String> cartItemIds, @PathVariable Object shipping_address, @PathVariable String payment_method){
         return Response.buildSuccess(cartService.submitOrder(cartItemIds,shipping_address,payment_method));
     }

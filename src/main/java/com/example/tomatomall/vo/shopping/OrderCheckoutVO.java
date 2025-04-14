@@ -11,7 +11,6 @@ import java.util.List;
 @NoArgsConstructor
 public class OrderCheckoutVO
 {
-    private String username;
     private List<String> cartItemIds;
     private String paymentMethod;
     private ReceiverInfo receiverInfo;

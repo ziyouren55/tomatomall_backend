@@ -153,7 +153,7 @@ public class CartServiceImpl implements CartService
     }
 
     public OrderSubmitVO submitOrder(List<String> cartItemIds, Object shipping_address, String payment_method) {
-        List<Cart> cartItems = new ArrayList<Cart>();
+        List<Cart> cartItems = new ArrayList<>();
         double totalAmount = 0;
         Integer cartItemId_int = Integer.valueOf(cartItemIds.get(0));
         for (String cartItemId : cartItemIds) {
