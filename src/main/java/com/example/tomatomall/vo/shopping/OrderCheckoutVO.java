@@ -12,7 +12,6 @@ import java.util.List;
 public class OrderCheckoutVO
 {
     private List<String> cartItemIds;
-    private String username;
     private String paymentMethod;
-    private ReceiverInfo receiverInfo;
+    private ReceiverInfoVO receiverInfoVO;
 }

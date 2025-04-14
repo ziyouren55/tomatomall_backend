@@ -53,7 +53,6 @@ public class ProductController
     }
 
 
-
     @GetMapping("/stockpile/{productId}")
     public Response getProductStockpile(@PathVariable("productId") Integer productId)
     {

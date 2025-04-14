@@ -1,11 +1,7 @@
 package com.example.tomatomall.service;
 
-import com.example.tomatomall.vo.shopping.CartItemVO;
-import com.example.tomatomall.vo.shopping.CartItemsVO;
-import com.example.tomatomall.vo.shopping.OrderSubmitVO;
-import com.example.tomatomall.vo.shopping.UpdateQuantityVO;
-
-import java.util.List;
+import com.example.tomatomall.po.Account;
+import com.example.tomatomall.vo.shopping.*;
 
 public interface CartService
 {
@@ -17,5 +13,5 @@ public interface CartService
 
     CartItemsVO getProductListFromCart(Integer userId);
 
-    OrderSubmitVO submitOrder(List<String> cartItemIds, Object shipping_address, String payment_method);
+    OrderSubmitVO submitOrder(OrderCheckoutVO orderCheckoutVO, Account account);
 }

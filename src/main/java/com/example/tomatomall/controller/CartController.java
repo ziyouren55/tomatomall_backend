@@ -7,6 +7,7 @@ import com.example.tomatomall.service.CartService;
 import com.example.tomatomall.vo.Response;
 import com.example.tomatomall.vo.shopping.CartItemVO;
 import com.example.tomatomall.vo.shopping.CartItemsVO;
+import com.example.tomatomall.vo.shopping.OrderCheckoutVO;
 import com.example.tomatomall.vo.shopping.UpdateQuantityVO;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.core.parameters.P;
@@ -47,9 +48,9 @@ public class CartController
         return Response.buildSuccess(cartService.getProductListFromCart(userId));
     }
 
-    @PostMapping("/checkout/{cartItemIds}/{shipping_address}/{payment_method}")
-    public Response submitOrder(@PathVariable List<String> cartItemIds,@PathVariable Object shipping_address,@PathVariable String payment_method){
-        return Response.buildSuccess(cartService.submitOrder(cartItemIds,shipping_address,payment_method));
+    @PostMapping("/checkout")
+    public Response submitOrder(@RequestBody OrderCheckoutVO orderCheckoutVO,@RequestAttribute("currentUser") Account account){
+        return Response.buildSuccess(cartService.submitOrder(orderCheckoutVO,account));
     }
 
 }
