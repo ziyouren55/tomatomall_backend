@@ -14,6 +14,7 @@ import org.springframework.web.bind.annotation.*;
 
 import javax.servlet.http.HttpSession;
 import java.security.Principal;
+import java.util.List;
 
 @RestController
 @RequestMapping("/api/cart")
@@ -46,4 +47,8 @@ public class CartController
         return Response.buildSuccess(cartService.getProductListFromCart(userId));
     }
 
+    @PostMapping("/checkout/{cartItemIds}/{shipping_address}/{payment_method}")
+    public Response submitOrder(@PathVariable List<String> cartItemIds, @PathVariable Object shipping_address, @PathVariable String payment_method){
+        return Response.buildSuccess(cartService.submitOrder(cartItemIds,shipping_address,payment_method));
+    }
 }

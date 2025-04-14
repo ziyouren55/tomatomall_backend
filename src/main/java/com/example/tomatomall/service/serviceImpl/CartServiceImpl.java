@@ -2,20 +2,23 @@ package com.example.tomatomall.service.serviceImpl;
 
 import com.example.tomatomall.exception.TomatoMallException;
 import com.example.tomatomall.po.Cart;
+import com.example.tomatomall.po.Order;
 import com.example.tomatomall.po.Product;
 import com.example.tomatomall.po.Stockpile;
-import com.example.tomatomall.repository.CartRepository;
-import com.example.tomatomall.repository.ProductRepository;
-import com.example.tomatomall.repository.StockpileRepository;
+import com.example.tomatomall.repository.*;
 import com.example.tomatomall.service.AccountService;
 import com.example.tomatomall.service.CartService;
 import com.example.tomatomall.vo.shopping.CartItemVO;
 import com.example.tomatomall.vo.shopping.CartItemsVO;
+import com.example.tomatomall.vo.shopping.OrderSubmitVO;
 import com.example.tomatomall.vo.shopping.UpdateQuantityVO;
 import org.springframework.beans.BeanUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
+import java.math.BigDecimal;
+import java.sql.Timestamp;
+import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
@@ -35,6 +38,12 @@ public class CartServiceImpl implements CartService
 
     @Autowired
     StockpileRepository stockpileRepository;
+
+    @Autowired
+    OrderRepository orderRepository;
+
+    @Autowired
+    AccountRepository accountRepository;
 
     @Override
     public CartItemVO addProductToCart(CartItemVO cartItemVO, Integer userId)
@@ -143,4 +152,52 @@ public class CartServiceImpl implements CartService
         return cartItemVO;
     }
 
+    public OrderSubmitVO submitOrder(List<String> cartItemIds, Object shipping_address, String payment_method) {
+        List<Cart> cartItems = new ArrayList<Cart>();
+        double totalAmount = 0;
+        Integer cartItemId_int = Integer.valueOf(cartItemIds.get(0));
+        for (String cartItemId : cartItemIds) {
+            cartItemId_int = Integer.valueOf(cartItemId);
+            Optional<Cart> newCart = cartRepository.findByCartItemId(cartItemId_int);
+            if (newCart.isPresent()) {
+                cartItems.add(newCart.get());
+                Optional<Stockpile> stockpile = stockpileRepository.findByProductId(newCart.get().getProductId());
+                if (stockpile.isPresent()) {
+                    if (stockpile.get().getAmount() < newCart.get().getQuantity()) {
+                        throw TomatoMallException.cartItemQuantityOutOfStock();
+                    } else {
+                        Optional<Product> product = productRepository.findById(newCart.get().getProductId());
+                        if (!product.isPresent()) {
+                            throw TomatoMallException.productNotFind();
+                        }
+                        totalAmount = totalAmount + newCart.get().getQuantity() * product.get().getPrice();
+                    }
+                } else {
+                    throw TomatoMallException.stockpileNotFind();
+                }
+            } else {
+                throw TomatoMallException.cartItemNotFind();
+            }
+        }
+        Optional<Cart> newCart = cartRepository.findByCartItemId(cartItemId_int);
+
+        Order order = new Order();
+        order.setUserId(newCart.get().getUserId());
+        order.setStatus("PENDING");
+        order.setPaymentMethod(payment_method);
+        order.setCreateTime(Timestamp.valueOf(LocalDateTime.now()));
+        order.setTotalAmount(BigDecimal.valueOf(totalAmount));
+        orderRepository.save(order);
+        Integer orderId = order.getOrderId();
+
+        OrderSubmitVO orderSubmitVO = new OrderSubmitVO();
+        orderSubmitVO.setUsername(String.valueOf(accountRepository.findById(newCart.get().getUserId())));
+        orderSubmitVO.setPaymentMethod(payment_method);
+        orderSubmitVO.setTotalAmount(String.valueOf(totalAmount));
+        orderSubmitVO.setCreateTime(String.valueOf(LocalDateTime.now()));
+        orderSubmitVO.setStatus("PENDING");
+        orderSubmitVO.setOrderId(String.valueOf(orderId));
+
+        return orderSubmitVO;
+    }
 }
