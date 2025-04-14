@@ -1,0 +1,202 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project version="4">
+  <component name="AutoImportSettings">
+    <option name="autoReloadType" value="SELECTIVE" />
+  </component>
+  <component name="ChangeListManager">
+    <list default="true" id="21fdaf17-94d3-443e-b3d4-3a97c4be20ca" name="更改" comment="lab4-czn">
+      <change afterPath="$PROJECT_DIR$/src/main/java/com/example/tomatomall/controller/OrderController.java" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/main/java/com/example/tomatomall/repository/OrderController.java" afterDir="false" />
+    </list>
+    <option name="SHOW_DIALOG" value="false" />
+    <option name="HIGHLIGHT_CONFLICTS" value="true" />
+    <option name="HIGHLIGHT_NON_ACTIVE_CHANGELIST" value="false" />
+    <option name="LAST_RESOLUTION" value="IGNORE" />
+  </component>
+  <component name="FileTemplateManagerImpl">
+    <option name="RECENT_TEMPLATES">
+      <list>
+        <option value="Interface" />
+        <option value="Class" />
+      </list>
+    </option>
+  </component>
+  <component name="Git.Settings">
+    <option name="PREVIEW_PUSH_PROTECTED_ONLY" value="true" />
+    <option name="RECENT_BRANCH_BY_REPOSITORY">
+      <map>
+        <entry key="$PROJECT_DIR$" value="czn_lab4_new" />
+      </map>
+    </option>
+    <option name="RECENT_GIT_ROOT_PATH" value="$PROJECT_DIR$" />
+  </component>
+  <component name="ProjectColorInfo">{
+  &quot;associatedIndex&quot;: 6
+}</component>
+  <component name="ProjectId" id="2vOrVwUOLDn8f07lDybFhkEuA7N" />
+  <component name="ProjectViewState">
+    <option name="hideEmptyMiddlePackages" value="true" />
+    <option name="showLibraryContents" value="true" />
+  </component>
+  <component name="PropertiesComponent"><![CDATA[{
+  "keyToString": {
+    "RunOnceActivity.ShowReadmeOnStart": "true",
+    "SONARLINT_PRECOMMIT_ANALYSIS": "true",
+    "git-widget-placeholder": "ziyouren-lab3",
+    "kotlin-language-version-configured": "true",
+    "last_opened_file_path": "E:/software_engine-II/tomato_store/lab3/tomato_store/src/main/java/com/example/tomatomall/repository",
+    "project.structure.last.edited": "项目",
+    "project.structure.proportion": "0.0",
+    "project.structure.side.proportion": "0.0",
+    "settings.editor.selected.configurable": "configurable.group.appearance",
+    "应用程序.TomatoMallApplication.executor": "Run"
+  }
+}]]></component>
+  <component name="RecentsManager">
+    <key name="CopyFile.RECENT_KEYS">
+      <recent name="E:\software_engine-II\tomato_store\lab3\tomato_store\src\main\resources" />
+      <recent name="E:\software_engine-II\tomato_store\lab3\tomato_store\src\main" />
+    </key>
+    <key name="MoveFile.RECENT_KEYS">
+      <recent name="E:\software_engine-II\tomato_store\lab3\tomato_store" />
+      <recent name="E:\software_engine-II\tomato_store\lab3\tomato_store\src\main\java" />
+      <recent name="E:\software_engine-II\tomato_store\lab3\tomato_store\src" />
+    </key>
+  </component>
+  <component name="SpellCheckerSettings" RuntimeDictionaries="0" Folders="0" CustomDictionaries="0" DefaultDictionary="应用程序级" UseSingleDictionary="true" transferred="true" />
+  <component name="TaskManager">
+    <task active="true" id="Default" summary="默认任务">
+      <changelist id="21fdaf17-94d3-443e-b3d4-3a97c4be20ca" name="更改" comment="" />
+      <created>1744026990838</created>
+      <option name="number" value="Default" />
+      <option name="presentableId" value="Default" />
+      <updated>1744026990838</updated>
+    </task>
+    <task id="LOCAL-00001" summary="lab4-czn">
+      <option name="closed" value="true" />
+      <created>1744276897742</created>
+      <option name="number" value="00001" />
+      <option name="presentableId" value="LOCAL-00001" />
+      <option name="project" value="LOCAL" />
+      <updated>1744276897742</updated>
+    </task>
+    <task id="LOCAL-00002" summary="lab4-czn">
+      <option name="closed" value="true" />
+      <created>1744277008905</created>
+      <option name="number" value="00002" />
+      <option name="presentableId" value="LOCAL-00002" />
+      <option name="project" value="LOCAL" />
+      <updated>1744277008905</updated>
+    </task>
+    <task id="LOCAL-00003" summary="lab4-czn">
+      <option name="closed" value="true" />
+      <created>1744277753804</created>
+      <option name="number" value="00003" />
+      <option name="presentableId" value="LOCAL-00003" />
+      <option name="project" value="LOCAL" />
+      <updated>1744277753804</updated>
+    </task>
+    <task id="LOCAL-00004" summary="lab4-czn">
+      <option name="closed" value="true" />
+      <created>1744278001134</created>
+      <option name="number" value="00004" />
+      <option name="presentableId" value="LOCAL-00004" />
+      <option name="project" value="LOCAL" />
+      <updated>1744278001134</updated>
+    </task>
+    <task id="LOCAL-00005" summary="lab4-czn">
+      <option name="closed" value="true" />
+      <created>1744278041278</created>
+      <option name="number" value="00005" />
+      <option name="presentableId" value="LOCAL-00005" />
+      <option name="project" value="LOCAL" />
+      <updated>1744278041278</updated>
+    </task>
+    <task id="LOCAL-00006" summary="lab4-czn">
+      <option name="closed" value="true" />
+      <created>1744278102403</created>
+      <option name="number" value="00006" />
+      <option name="presentableId" value="LOCAL-00006" />
+      <option name="project" value="LOCAL" />
+      <updated>1744278102403</updated>
+    </task>
+    <task id="LOCAL-00007" summary="lab4-czn">
+      <option name="closed" value="true" />
+      <created>1744278396779</created>
+      <option name="number" value="00007" />
+      <option name="presentableId" value="LOCAL-00007" />
+      <option name="project" value="LOCAL" />
+      <updated>1744278396779</updated>
+    </task>
+    <task id="LOCAL-00008" summary="lab4-czn">
+      <option name="closed" value="true" />
+      <created>1744278432006</created>
+      <option name="number" value="00008" />
+      <option name="presentableId" value="LOCAL-00008" />
+      <option name="project" value="LOCAL" />
+      <updated>1744278432006</updated>
+    </task>
+    <task id="LOCAL-00009" summary="lab4-czn">
+      <option name="closed" value="true" />
+      <created>1744278636132</created>
+      <option name="number" value="00009" />
+      <option name="presentableId" value="LOCAL-00009" />
+      <option name="project" value="LOCAL" />
+      <updated>1744278636132</updated>
+    </task>
+    <task id="LOCAL-00010" summary="lab4-czn">
+      <option name="closed" value="true" />
+      <created>1744278706445</created>
+      <option name="number" value="00010" />
+      <option name="presentableId" value="LOCAL-00010" />
+      <option name="project" value="LOCAL" />
+      <updated>1744278706445</updated>
+    </task>
+    <task id="LOCAL-00011" summary="lab4-czn">
+      <option name="closed" value="true" />
+      <created>1744278806742</created>
+      <option name="number" value="00011" />
+      <option name="presentableId" value="LOCAL-00011" />
+      <option name="project" value="LOCAL" />
+      <updated>1744278806742</updated>
+    </task>
+    <task id="LOCAL-00012" summary="lab4-czn">
+      <option name="closed" value="true" />
+      <created>1744279039952</created>
+      <option name="number" value="00012" />
+      <option name="presentableId" value="LOCAL-00012" />
+      <option name="project" value="LOCAL" />
+      <updated>1744279039952</updated>
+    </task>
+    <task id="LOCAL-00013" summary="lab4-czn">
+      <option name="closed" value="true" />
+      <created>1744279094662</created>
+      <option name="number" value="00013" />
+      <option name="presentableId" value="LOCAL-00013" />
+      <option name="project" value="LOCAL" />
+      <updated>1744279094662</updated>
+    </task>
+    <task id="LOCAL-00014" summary="lab4-czn">
+      <option name="closed" value="true" />
+      <created>1744279183088</created>
+      <option name="number" value="00014" />
+      <option name="presentableId" value="LOCAL-00014" />
+      <option name="project" value="LOCAL" />
+      <updated>1744279183088</updated>
+    </task>
+    <task id="LOCAL-00015" summary="lab4-czn">
+      <option name="closed" value="true" />
+      <created>1744279218179</created>
+      <option name="number" value="00015" />
+      <option name="presentableId" value="LOCAL-00015" />
+      <option name="project" value="LOCAL" />
+      <updated>1744279218179</updated>
+    </task>
+    <option name="localTasksCounter" value="16" />
+    <servers />
+  </component>
+  <component name="VcsManagerConfiguration">
+    <MESSAGE value="lab4-czn" />
+    <option name="LAST_COMMIT_MESSAGE" value="lab4-czn" />
+  </component>
+</project>
