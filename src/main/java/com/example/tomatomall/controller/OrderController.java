@@ -57,7 +57,6 @@ public class OrderController {
             orderService.updateOrderStatus(orderId, alipayTradeNo, amount);
 
             // 扣减库存（建议加锁或乐观锁）
-            //todo 考虑添加这个功能
             orderService.reduceStockpile(Integer.valueOf(orderId));
         }
 
