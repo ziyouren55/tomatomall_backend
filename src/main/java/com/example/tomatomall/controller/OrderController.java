@@ -2,10 +2,12 @@ package com.example.tomatomall.controller;
 
 import com.alipay.api.AlipayApiException;
 import com.alipay.api.internal.util.AlipaySignature;
-import com.example.tomatomall.po.Stockpile;
+import com.example.tomatomall.repository.ProductRepository;
 import com.example.tomatomall.repository.StockpileRepository;
 import com.example.tomatomall.service.OrderService;
+import com.example.tomatomall.service.ProductService;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -21,15 +23,14 @@ import java.util.stream.Collectors;
 public class OrderController {
 
     @Autowired
-    StockpileRepository inventoryService;
-
-    private static final String ALIPAY_PUBLIC_KEY = "MIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEA5/9JeqIOaR5IFinRHpi30RY2AGWcMpMtdUcmYzoNIwc9OEl3yk1hj+PjrO9PP1f8IWbdLBbwq7EfcTJGa1S+uOCqUO+5E74j67eSamG0K41HGI15wNAkUNYOyD/kbjuNBDEsdM3BjxvirryQ5PjbuJSqlekY2FXnfMo/Y4vqicj1w1KvMXimuvGqgSNfL4FvQKiOTc1Of9zqZMunrD7yibc9U3uUmuyvk+53c/hqwPxd5ngi9UyZ+Qk/iQRQ2duhIPzhFXEUMBR1OQbv9YI2k7/+/mJ/AHRnQ6T+DOWieDicQ3eioV4kyWH6ak8FOAcfIpP3xwPcxLCJ/4C/wJrExwIDAQAB";
-    @Autowired
     OrderService orderService;
 
+    @Value("${alipay.alipay-public-key}")
+    private String ALIPAY_PUBLIC_KEY;
+
     @PostMapping("/{orderId}/pay")
-    public Response payInit(@PathVariable Integer orderId){
-        return Response.buildSuccess(orderService.payInit(orderId));
+    public Response initiatePayment(@PathVariable Integer orderId){
+        return Response.buildSuccess(orderService.initiatePayment(orderId));
     }
 
     @PostMapping("/api/orders/notify")
@@ -56,7 +57,8 @@ public class OrderController {
             orderService.updateOrderStatus(orderId, alipayTradeNo, amount);
 
             // 扣减库存（建议加锁或乐观锁）
-            inventoryService.reduceStock(orderId);
+            //todo 考虑添加这个功能
+            orderService.reduceStockpile(Integer.valueOf(orderId));
         }
 
         // 4. 必须返回纯文本的 "success"（支付宝要求）

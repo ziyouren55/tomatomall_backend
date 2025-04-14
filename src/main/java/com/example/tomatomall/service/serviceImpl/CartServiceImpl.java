@@ -1,17 +1,12 @@
 package com.example.tomatomall.service.serviceImpl;
 
+import com.example.tomatomall.enums.OrderStatus;
 import com.example.tomatomall.exception.TomatoMallException;
-import com.example.tomatomall.po.Cart;
-import com.example.tomatomall.po.Order;
-import com.example.tomatomall.po.Product;
-import com.example.tomatomall.po.Stockpile;
+import com.example.tomatomall.po.*;
 import com.example.tomatomall.repository.*;
 import com.example.tomatomall.service.AccountService;
 import com.example.tomatomall.service.CartService;
-import com.example.tomatomall.vo.shopping.CartItemVO;
-import com.example.tomatomall.vo.shopping.CartItemsVO;
-import com.example.tomatomall.vo.shopping.OrderSubmitVO;
-import com.example.tomatomall.vo.shopping.UpdateQuantityVO;
+import com.example.tomatomall.vo.shopping.*;
 import org.springframework.beans.BeanUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
@@ -152,12 +147,18 @@ public class CartServiceImpl implements CartService
         return cartItemVO;
     }
 
-    public OrderSubmitVO submitOrder(List<String> cartItemIds, Object shipping_address, String payment_method) {
+    public OrderSubmitVO submitOrder(OrderCheckoutVO orderCheckoutVO, Account account) {
         List<Cart> cartItems = new ArrayList<>();
+        List<String> cartItemIds = orderCheckoutVO.getCartItemIds();
+        String payment_method = orderCheckoutVO.getPaymentMethod();
+        ReceiverInfoVO receiverInfoVO = orderCheckoutVO.getReceiverInfoVO();
+        String username = account.getUsername();
+        int userId = account.getId();
+
         double totalAmount = 0;
-        Integer cartItemId_int = Integer.valueOf(cartItemIds.get(0));
+        int cartItemId_int = Integer.parseInt(cartItemIds.get(0));
         for (String cartItemId : cartItemIds) {
-            cartItemId_int = Integer.valueOf(cartItemId);
+            cartItemId_int = Integer.parseInt(cartItemId);
             Optional<Cart> newCart = cartRepository.findByCartItemId(cartItemId_int);
             if (newCart.isPresent()) {
                 cartItems.add(newCart.get());
@@ -179,11 +180,10 @@ public class CartServiceImpl implements CartService
                 throw TomatoMallException.cartItemNotFind();
             }
         }
-        Optional<Cart> newCart = cartRepository.findByCartItemId(cartItemId_int);
 
         Order order = new Order();
-        order.setUserId(newCart.get().getUserId());
-        order.setStatus("PENDING");
+        order.setUserId(userId);
+        order.setStatus(OrderStatus.PENDING.name());
         order.setPaymentMethod(payment_method);
         order.setCreateTime(Timestamp.valueOf(LocalDateTime.now()));
         order.setTotalAmount(BigDecimal.valueOf(totalAmount));
@@ -191,11 +191,11 @@ public class CartServiceImpl implements CartService
         Integer orderId = order.getOrderId();
 
         OrderSubmitVO orderSubmitVO = new OrderSubmitVO();
-        orderSubmitVO.setUsername(String.valueOf(accountRepository.findById(newCart.get().getUserId())));
+        orderSubmitVO.setUsername(username);
         orderSubmitVO.setPaymentMethod(payment_method);
         orderSubmitVO.setTotalAmount(String.valueOf(totalAmount));
         orderSubmitVO.setCreateTime(String.valueOf(LocalDateTime.now()));
-        orderSubmitVO.setStatus("PENDING");
+        orderSubmitVO.setStatus(OrderStatus.PENDING.name());
         orderSubmitVO.setOrderId(String.valueOf(orderId));
 
         return orderSubmitVO;

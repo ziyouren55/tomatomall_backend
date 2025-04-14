@@ -13,5 +13,5 @@ public class OrderCheckoutVO
 {
     private List<String> cartItemIds;
     private String paymentMethod;
-    private ReceiverInfo receiverInfo;
+    private ReceiverInfoVO receiverInfoVO;
 }
