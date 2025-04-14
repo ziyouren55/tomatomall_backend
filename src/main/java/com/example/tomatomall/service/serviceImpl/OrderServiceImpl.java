@@ -59,7 +59,7 @@ public class OrderServiceImpl implements OrderService {
     }
 
     @Override
-    public String reduceStockpile(Integer orderId)
+    public void reduceStockpile(Integer orderId)
     {
         List<Integer> cartItemIdList = cartsOrdersRelationRepository.findCartItemIdsByOrderId(orderId);
         // 遍历 cartItemId 列表，查询对应的 Cart 条目
@@ -84,7 +84,6 @@ public class OrderServiceImpl implements OrderService {
             stockpile.setAmount(stockpile.getAmount() - quantity);
             stockpileRepository.save(stockpile);
         }
-        return "减少库存成功";
     }
 
 }

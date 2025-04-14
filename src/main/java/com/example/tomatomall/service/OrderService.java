@@ -7,5 +7,5 @@ public interface OrderService {
 
     void updateOrderStatus(String orderId, String alipayTradeNo, String amount);
 
-    String reduceStockpile(Integer orderId);
+    void reduceStockpile(Integer orderId);
 }
