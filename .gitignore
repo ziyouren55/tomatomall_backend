@@ -1,16 +1,3 @@
-# 忽略 application.yml
-src/main/resources/application.yml
-
-
-
-# 忽略所有 yml 配置（视情况使用）
-# *.yml
-
-# 忽略 .env 环境文件
-.env
-
-# 忽略 idea 的项目文件
-.idea/
-*.iml
-# 忽略编译产物
-/target/
+/.idea/
+/target
+/src/main/resources/application.yml
