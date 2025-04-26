@@ -1,5 +1,6 @@
 package com.example.tomatomall.service.serviceImpl;
 
+import com.alipay.api.AlipayApiException;
 import com.example.tomatomall.enums.OrderStatus;
 import com.example.tomatomall.exception.TomatoMallException;
 import com.example.tomatomall.po.Cart;
@@ -10,13 +11,18 @@ import com.example.tomatomall.repository.CartsOrdersRelationRepository;
 import com.example.tomatomall.repository.OrderRepository;
 import com.example.tomatomall.repository.StockpileRepository;
 import com.example.tomatomall.service.OrderService;
+import com.example.tomatomall.util.AlipayUtil;
 import com.example.tomatomall.vo.shopping.PaymentResponseVO;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Service;
 
+import javax.servlet.http.HttpServletRequest;
 import java.math.BigDecimal;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 
+@Service
 public class OrderServiceImpl implements OrderService {
     @Autowired
     OrderRepository orderRepository;
@@ -30,31 +36,72 @@ public class OrderServiceImpl implements OrderService {
     @Autowired
     CartsOrdersRelationRepository cartsOrdersRelationRepository;
 
-    @Override
-    public PaymentResponseVO initiatePayment(Integer orderId){
-        PaymentResponseVO paymentResponseVO = new PaymentResponseVO();
-        paymentResponseVO.setOrderId(String.valueOf(orderId));
+    @Autowired
+    AlipayUtil alipayUtil;
 
-        Optional<Order> order = orderRepository.findById(orderId);
-        if (order.isPresent()){
-            paymentResponseVO.setPaymentMethod(order.get().getPaymentMethod());
-            paymentResponseVO.setTotalAmount(order.get().getTotalAmount());
-            paymentResponseVO.setPaymentForm("暂未实现");
+    @Override
+    public PaymentResponseVO initiatePayment(Integer orderId) {
+        Optional<Order> orderOpt = orderRepository.findById(orderId);
+        if (!orderOpt.isPresent()) {
+            throw TomatoMallException.orderNotFound();
         }
-        return paymentResponseVO;
+
+        Order order = orderOpt.get();
+        try {
+            // 调用AlipayUtil生成支付表单
+            String paymentForm = alipayUtil.generatePayForm(
+                String.valueOf(orderId),
+                order.getTotalAmount().toString(),
+                "TomatoMall订单支付"
+            );
+
+            PaymentResponseVO response = new PaymentResponseVO();
+            response.setOrderId(String.valueOf(orderId));
+            response.setPaymentMethod(order.getPaymentMethod());
+            response.setTotalAmount(order.getTotalAmount());
+            response.setPaymentForm(paymentForm); // 替换硬编码
+            return response;
+        } catch (AlipayApiException e) {
+            throw new TomatoMallException("支付宝支付表单生成失败");
+        }
     }
 
     @Override
-    public void updateOrderStatus(String orderId, String alipayTradeNo, String amount) {
-        Optional<Order> order = orderRepository.findById(Integer.valueOf(orderId));
-        if (order.isPresent()){
+    public void handleAlipayNotify(HttpServletRequest request) {
+        try {
+            // 1. 解析参数并验证签名
+            Map<String, String> params = alipayUtil.parseAlipayParams(request);
+            boolean isValid = alipayUtil.verifySignature(params);
+            if (!isValid) {
+                throw new TomatoMallException("支付宝回调签名验证失败");
+            }
 
-            if(OrderStatus.SUCCESS.name().equals(order.get().getStatus()))
-                return;
+            // 2. 处理支付成功逻辑
+            if ("TRADE_SUCCESS".equals(params.get("trade_status"))) {
+                String orderId = params.get("out_trade_no");
+                String alipayTradeNo = params.get("trade_no");
+                String amount = params.get("total_amount");
 
-            order.get().setStatus(OrderStatus.SUCCESS.name());
-            order.get().setTotalAmount(new BigDecimal(amount));
-            orderRepository.save(order.get());
+                // 幂等性检查
+                Optional<Order> orderOpt = orderRepository.findById(Integer.valueOf(orderId));
+                if (!orderOpt.isPresent()) {
+                    throw TomatoMallException.orderNotFound();
+                }
+                Order order = orderOpt.get();
+                if (OrderStatus.SUCCESS.name().equals(order.getStatus())) {
+                    return;
+                }
+
+                // 更新订单状态
+                order.setStatus(OrderStatus.SUCCESS.name());
+                order.setTotalAmount(new BigDecimal(amount));
+                orderRepository.save(order);
+
+                // 扣减库存（需加锁）
+                reduceStockpile(order.getOrderId());
+            }
+        } catch (AlipayApiException e) {
+            throw new TomatoMallException("支付宝回调处理异常");
         }
     }
 
