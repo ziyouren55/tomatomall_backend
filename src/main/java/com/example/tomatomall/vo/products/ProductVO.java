@@ -1,5 +1,6 @@
 package com.example.tomatomall.vo.products;
 
+import com.example.tomatomall.po.BookComment;
 import com.example.tomatomall.po.Product;
 import com.example.tomatomall.po.Specification;
 import lombok.Getter;
@@ -20,6 +21,7 @@ public class ProductVO
     private String cover;
     private String detail;
     private Set<Specification> specifications;
+    private Set<BookComment> bookComments;
 
     public Product toPO()
     {
@@ -32,7 +34,6 @@ public class ProductVO
         product.setCover(cover);
         product.setDetail(detail);
         product.setSpecifications(specifications);
-
         return product;
     }
 }

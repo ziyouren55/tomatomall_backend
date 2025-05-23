@@ -12,6 +12,7 @@ import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import com.example.tomatomall.vo.Response;
+import org.springframework.web.bind.annotation.RestController;
 
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
@@ -19,6 +20,7 @@ import java.io.IOException;
 import java.util.Map;
 import java.util.stream.Collectors;
 
+@RestController
 @RequestMapping("/api/orders")
 public class OrderController {
 

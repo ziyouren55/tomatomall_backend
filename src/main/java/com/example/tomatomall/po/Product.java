@@ -57,6 +57,7 @@ public class Product
     @Column(name = "specifications")
     private Set<Specification> specifications;
 
+
     public ProductVO toVO()
     {
         ProductVO productVO = new ProductVO();
@@ -68,7 +69,6 @@ public class Product
         productVO.setCover(cover);
         productVO.setDetail(detail);
         productVO.setSpecifications(specifications);
-
         return productVO;
     }
 
