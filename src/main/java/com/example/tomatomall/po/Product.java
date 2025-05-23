@@ -28,7 +28,7 @@ public class Product
     private String title;
 
     @Basic
-    @NotNull(message = "商品名称不能为空")
+    @NotNull(message = "商品价格不能为空")
     @Column(name = "price", nullable = false)
     private Double price;
 
