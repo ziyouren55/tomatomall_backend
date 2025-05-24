@@ -1,0 +1,24 @@
+package com.example.tomatomall.vo.coupon;
+
+import lombok.Getter;
+import lombok.NoArgsConstructor;
+import lombok.Setter;
+
+import java.math.BigDecimal;
+import java.util.Date;
+
+@Setter
+@Getter
+@NoArgsConstructor
+public class CouponVO {
+    private Integer id;
+    private String name;
+    private String description;
+    private BigDecimal discountAmount;
+    private BigDecimal discountPercentage;
+    private BigDecimal minimumPurchase;
+    private Integer pointsRequired;
+    private Date validFrom;
+    private Date validTo;
+    private Boolean isActive;
+}

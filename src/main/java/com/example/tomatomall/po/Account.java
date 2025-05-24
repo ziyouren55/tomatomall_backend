@@ -30,7 +30,6 @@ public class Account {
     @Column(name = "name")
     private String name;
 
-
     @Basic
     @Column(name = "avatar")
     private String avatar;
@@ -50,6 +49,13 @@ public class Account {
     @Basic
     @Column(name = "location")
     private String location;
+
+    // 在Account类中添加会员等级关联
+    @Column(name = "member_level_id")
+    private Integer memberLevelId = 1; // 默认为最低会员等级
+
+    @Column(name = "is_member", nullable = false)
+    private Boolean isMember = false;
 
     @Basic
     @Column(name = "create_time")
