@@ -11,5 +11,5 @@ public interface MemberLevelRepository extends JpaRepository<MemberLevel, Intege
     Optional<MemberLevel> findByLevelName(String levelName);
     Optional<MemberLevel> findByMemberLevel(Integer memberLevel);
     List<MemberLevel> findByIsActiveTrue();
-    Optional<MemberLevel> findByPointsRequiredLessThanEqualOrderByPointsRequiredDesc(Integer points);
+    Optional<MemberLevel> findFirstByPointsRequiredLessThanEqualOrderByPointsRequiredDesc(Integer points);
 }

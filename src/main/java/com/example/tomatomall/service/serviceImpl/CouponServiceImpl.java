@@ -135,7 +135,7 @@ public class CouponServiceImpl implements CouponService
     @Override
     public boolean applyCouponToOrder(Integer userId, Integer couponId, Integer orderId) {
         // 1. 检查用户优惠券是否存在且未使用
-        Optional<UserCoupon> userCouponOpt = userCouponRepository.findByUserIdAndCouponIdAndIsUsedFalse(userId, couponId);
+        Optional<UserCoupon> userCouponOpt = userCouponRepository.findFirstByUserIdAndCouponIdAndIsUsedFalse(userId, couponId);
         if (!userCouponOpt.isPresent()) {
             throw new TomatoMallException("无效的优惠券或优惠券已使用");
         }

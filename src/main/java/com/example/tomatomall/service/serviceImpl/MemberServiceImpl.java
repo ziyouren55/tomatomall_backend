@@ -164,7 +164,7 @@ public class MemberServiceImpl implements MemberService
 
         // 查找符合条件的最高等级
         Optional<MemberLevel> eligibleLevel = memberLevelRepository
-            .findByPointsRequiredLessThanEqualOrderByPointsRequiredDesc(memberPoints.getTotalPoints());
+            .findFirstByPointsRequiredLessThanEqualOrderByPointsRequiredDesc(memberPoints.getTotalPoints());
 
         if (eligibleLevel.isPresent() && !eligibleLevel.get().getId().equals(memberPoints.getCurrentLevelId())) {
             // 升级会员等级
