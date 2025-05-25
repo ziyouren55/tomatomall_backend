@@ -3,7 +3,6 @@ package com.example.tomatomall.po;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
-import org.springframework.data.annotation.Id;
 
 import javax.persistence.*;
 import java.math.BigDecimal;
@@ -18,6 +17,9 @@ public class MemberLevel {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Integer id;
+
+    @Column(name = "member_level", nullable = false, unique = true)
+    private Integer memberLevel;
 
     @Column(name = "level_name", nullable = false, unique = true)
     private String levelName;

@@ -9,6 +9,7 @@ import java.util.Optional;
 public interface MemberLevelRepository extends JpaRepository<MemberLevel, Integer>
 {
     Optional<MemberLevel> findByLevelName(String levelName);
+    Optional<MemberLevel> findByMemberLevel(Integer memberLevel);
     List<MemberLevel> findByIsActiveTrue();
     Optional<MemberLevel> findByPointsRequiredLessThanEqualOrderByPointsRequiredDesc(Integer points);
 }

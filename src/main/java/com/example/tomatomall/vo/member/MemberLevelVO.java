@@ -11,6 +11,7 @@ import java.math.BigDecimal;
 @NoArgsConstructor
 public class MemberLevelVO {
     private Integer id;
+    private Integer memberLevel;
     private String levelName;
     private Integer pointsRequired;
     private BigDecimal discountRate;

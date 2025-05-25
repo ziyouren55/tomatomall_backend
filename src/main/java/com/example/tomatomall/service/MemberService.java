@@ -12,7 +12,7 @@ public interface MemberService {
     MemberLevelVO getMemberLevelById(Integer levelId);
     MemberLevelVO getMemberLevelByUserId(Integer userId);
     MemberLevelVO createMemberLevel(MemberLevelVO levelVO);
-    MemberLevelVO updateMemberLevel(MemberLevelVO levelVO);
+    MemberLevelVO updateMemberLevel(Integer levelId, MemberLevelVO levelVO);
 
     // 会员积分相关
     MemberPointsVO getUserPoints(Integer userId);

@@ -48,7 +48,7 @@ public class MemberServiceImpl implements MemberService
     // 根据ID获取会员等级
     @Override
     public MemberLevelVO getMemberLevelById(Integer levelId) {
-        MemberLevel level = memberLevelRepository.findById(levelId)
+        MemberLevel level = memberLevelRepository.findByMemberLevel(levelId)
             .orElseThrow(() -> new TomatoMallException("会员等级不存在"));
         return convertToVO(level);
     }
@@ -86,8 +86,8 @@ public class MemberServiceImpl implements MemberService
 
     // 更新会员等级
     @Override
-    public MemberLevelVO updateMemberLevel(MemberLevelVO levelVO) {
-        MemberLevel level = memberLevelRepository.findById(levelVO.getId())
+    public MemberLevelVO updateMemberLevel(Integer levelId, MemberLevelVO levelVO) {
+        MemberLevel level = memberLevelRepository.findById(levelId)
             .orElseThrow(() -> new TomatoMallException("会员等级不存在"));
 
         BeanUtils.copyProperties(levelVO, level, MyBeanUtil.getNullPropertyNames(levelVO));
@@ -200,7 +200,7 @@ public class MemberServiceImpl implements MemberService
     @Override
     public MemberLevelVO upgradeMemberLevel(Integer userId, Integer targetLevelId) {
         // 检查目标等级是否存在
-        MemberLevel targetLevel = memberLevelRepository.findById(targetLevelId)
+        MemberLevel targetLevel = memberLevelRepository.findByMemberLevel(targetLevelId)
             .orElseThrow(() -> new TomatoMallException("目标会员等级不存在"));
 
         // 更新用户会员状态
@@ -247,7 +247,7 @@ public class MemberServiceImpl implements MemberService
 
         // 添加会员等级名称
         if (points.getCurrentLevelId() != null) {
-            Optional<MemberLevel> level = memberLevelRepository.findById(points.getCurrentLevelId());
+            Optional<MemberLevel> level = memberLevelRepository.findByMemberLevel(points.getCurrentLevelId());
             level.ifPresent(l -> vo.setCurrentLevelName(l.getLevelName()));
         }
 

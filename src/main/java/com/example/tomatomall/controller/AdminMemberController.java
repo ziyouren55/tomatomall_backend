@@ -42,8 +42,7 @@ public class AdminMemberController {
      */
     @PutMapping("/levels/{levelId}")
     public Response updateLevel(@PathVariable Integer levelId, @RequestBody MemberLevelVO levelVO) {
-        levelVO.setId(levelId);
-        return Response.buildSuccess(memberService.updateMemberLevel(levelVO));
+        return Response.buildSuccess(memberService.updateMemberLevel(levelId, levelVO));
     }
 
     /**

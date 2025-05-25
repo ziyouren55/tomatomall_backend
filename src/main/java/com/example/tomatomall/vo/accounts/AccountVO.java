@@ -19,6 +19,8 @@ public class AccountVO
     private String role;
     private String telephone;
     private String email;
+    private Integer memberLevelId;
+    private Boolean isMember;
     private String location;
 
     public Account toPO()
@@ -33,6 +35,8 @@ public class AccountVO
         account.setTelephone(telephone);
         account.setEmail(email);
         account.setLocation(location);
+        account.setMemberLevelId(memberLevelId);
+        account.setIsMember(isMember);
 
         return account;
     }
