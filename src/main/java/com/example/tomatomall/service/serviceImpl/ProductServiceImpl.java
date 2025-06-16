@@ -19,59 +19,50 @@ import java.util.Optional;
 import java.util.stream.Collectors;
 
 @Service
-public class ProductServiceImpl implements ProductService
-{
+public class ProductServiceImpl implements ProductService {
     @Autowired
     ProductRepository productRepository;
 
     @Autowired
     StockpileRepository stockpileRepository;
 
-
     @Override
-    public List<ProductVO> getProductList()
-    {
+    public List<ProductVO> getProductList() {
         return productRepository.findAll().stream().map(Product::toVO).collect(Collectors.toList());
     }
 
     @Override
-    public ProductVO getProduct(Integer id)
-    {
+    public ProductVO getProduct(Integer id) {
         Optional<Product> product = productRepository.findById(id);
-        if(product.isPresent())
+        if (product.isPresent())
             return product.get().toVO();
         else
             throw TomatoMallException.productNotFind();
     }
 
     @Override
-    public String updateProduct(ProductVO productVO)
-    {
+    public String updateProduct(ProductVO productVO) {
         Optional<Product> product = productRepository.findById(productVO.getId());
-        if(!product.isPresent())
-        {
+        if (!product.isPresent()) {
             throw TomatoMallException.productNotFind();
         }
-        BeanUtils.copyProperties(productVO,product.get(), MyBeanUtil.getNullPropertyNames(productVO));
+        BeanUtils.copyProperties(productVO, product.get(), MyBeanUtil.getNullPropertyNames(productVO));
         productRepository.save(product.get());
         return "更新成功";
     }
 
     @Override
-    public ProductVO createProduct(ProductVO productVO)
-    {
+    public ProductVO createProduct(ProductVO productVO) {
         Optional<Product> product = productRepository.findByTitle(productVO.getTitle());
-        if(product.isPresent())
-        {
+        if (product.isPresent()) {
             throw TomatoMallException.productAlreadyExists();
         }
         Product newProduct = productVO.toPO();
         productRepository.save(newProduct);
         Optional<Stockpile> stockpile = stockpileRepository.findByProductId(productVO.getId());
-        if(stockpile.isPresent())
+        if (stockpile.isPresent())
             stockpile.get().setAmount(stockpile.get().getAmount() + 1);
-        else
-        {
+        else {
             StockpileVO stockpileVO = new StockpileVO();
             stockpileVO.setId((int) (System.currentTimeMillis() % Integer.MAX_VALUE));
             stockpileVO.setProductId(newProduct.getId());
@@ -80,26 +71,23 @@ public class ProductServiceImpl implements ProductService
             stockpileRepository.save(stockpileVO.toPO());
         }
 
-
         return newProduct.toVO();
     }
 
     @Override
     @Transactional
-    public String deleteProduct(Integer id)
-    {
+    public String deleteProduct(Integer id) {
         Optional<Product> product = productRepository.findById(id);
-        if(!product.isPresent())
+        if (!product.isPresent())
             throw TomatoMallException.productNotFind();
         productRepository.deleteById(id);
         return "删除成功";
     }
 
     @Override
-    public String updateProductStockpile(Integer productId, Integer amount)
-    {
+    public String updateProductStockpile(Integer productId, Integer amount) {
         Optional<Stockpile> stockpile = stockpileRepository.findByProductId(productId);
-        if(!stockpile.isPresent())
+        if (!stockpile.isPresent())
             throw TomatoMallException.productNotFind();
         stockpile.get().setAmount(amount);
         stockpileRepository.save(stockpile.get());
@@ -107,10 +95,9 @@ public class ProductServiceImpl implements ProductService
     }
 
     @Override
-    public StockpileVO getProductStockpile(Integer productId)
-    {
+    public StockpileVO getProductStockpile(Integer productId) {
         Optional<Stockpile> stockpile = stockpileRepository.findByProductId(productId);
-        if(stockpile.isPresent())
+        if (stockpile.isPresent())
             return stockpile.get().toVO();
         else
             throw TomatoMallException.productNotFind();

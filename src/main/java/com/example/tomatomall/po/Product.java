@@ -51,11 +51,16 @@ public class Product
     @Column(name = "detail")
     private String detail;
 
+    // 在Product.java中添加销量属性
     @Basic
-    @ElementCollection
-    @CollectionTable(name = "product_specifications", joinColumns = @JoinColumn(name = "product_id"))
-    @Column(name = "specifications")
-    private Set<Specification> specifications;
+    @Column(name = "sales_count", nullable = false)
+    private Integer salesCount = 0; // 默认销量为0
+
+    //todo specification的处理
+//   @ElementCollection
+//   @CollectionTable(name = "product_specifications", joinColumns = @JoinColumn(name = "product_id"))
+//   @Column(name = "specifications")
+//   private Set<Specification> specifications;
 
     public ProductVO toVO()
     {
@@ -67,7 +72,8 @@ public class Product
         productVO.setDescription(description);
         productVO.setCover(cover);
         productVO.setDetail(detail);
-        productVO.setSpecifications(specifications);
+        productVO.setSalesCount(salesCount);
+//        productVO.setSpecifications(specifications);
 
         return productVO;
     }

@@ -3,10 +3,12 @@ package com.example.tomatomall.repository;
 import com.example.tomatomall.po.Product;
 import org.springframework.data.jpa.repository.JpaRepository;
 
+import java.util.List;
 import java.util.Optional;
 
 public interface ProductRepository extends JpaRepository<Product,Integer>
 {
     Optional<Product> findByTitle(String title);
 
+    List<Product> findBySalesCountGreaterThanAndIdNotIn(Integer salesThreshold, List<Integer> existingBookIds);
 }

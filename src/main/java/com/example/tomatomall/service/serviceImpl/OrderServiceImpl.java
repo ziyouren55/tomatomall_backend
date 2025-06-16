@@ -4,12 +4,14 @@ import com.alipay.api.AlipayApiException;
 import com.example.tomatomall.enums.OrderStatus;
 import com.example.tomatomall.exception.TomatoMallException;
 import com.example.tomatomall.po.Cart;
+import com.example.tomatomall.po.CartsOrdersRelation;
 import com.example.tomatomall.po.Order;
 import com.example.tomatomall.po.Stockpile;
 import com.example.tomatomall.repository.CartRepository;
 import com.example.tomatomall.repository.CartsOrdersRelationRepository;
 import com.example.tomatomall.repository.OrderRepository;
 import com.example.tomatomall.repository.StockpileRepository;
+import com.example.tomatomall.service.ForumService;
 import com.example.tomatomall.service.OrderService;
 import com.example.tomatomall.util.AlipayUtil;
 import com.example.tomatomall.vo.shopping.PaymentResponseVO;
@@ -35,6 +37,9 @@ public class OrderServiceImpl implements OrderService {
 
     @Autowired
     CartsOrdersRelationRepository cartsOrdersRelationRepository;
+
+    @Autowired
+    ForumService forumService;
 
     @Autowired
     AlipayUtil alipayUtil;
@@ -97,6 +102,9 @@ public class OrderServiceImpl implements OrderService {
                 order.setTotalAmount(new BigDecimal(amount));
                 orderRepository.save(order);
 
+                // 更新销量并检查是否需要创建论坛
+                updateProductSalesAndCheckForum(order.getOrderId());
+
                 // 扣减库存（需加锁）
                 reduceStockpile(order.getOrderId());
             }
@@ -132,5 +140,25 @@ public class OrderServiceImpl implements OrderService {
             stockpileRepository.save(stockpile);
         }
     }
+
+    /**
+ * 更新订单中商品的销量并检查是否需要创建论坛
+ */
+private void updateProductSalesAndCheckForum(Integer orderId) {
+    // 获取订单中的所有商品和数量
+    List<CartsOrdersRelation> relations = cartsOrdersRelationRepository.findByOrderId(orderId);
+
+    for (CartsOrdersRelation relation : relations) {
+        Optional<Cart> cartOpt = cartRepository.findByCartItemId(relation.getCartItemId());
+        if (cartOpt.isPresent()) {
+            Cart cart = cartOpt.get();
+            Integer productId = cart.getProductId();
+            Integer quantity = cart.getQuantity();
+
+            // 更新销量并检查是否需要创建论坛
+            forumService.incrementSalesAndCheckForum(productId, quantity);
+        }
+    }
+}
 
 }

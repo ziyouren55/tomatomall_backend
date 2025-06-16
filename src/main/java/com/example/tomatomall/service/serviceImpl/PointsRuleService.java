@@ -13,8 +13,8 @@ public class PointsRuleService {
 
     // 订单完成后增加积分
     public void addPointsForOrder(Integer userId, Integer orderId, BigDecimal orderAmount) {
-        // 基础规则：每消费1元获得1积分
-        Integer pointsToAdd = orderAmount.intValue();
+        // 基础规则：每消费1元获得10积分
+        Integer pointsToAdd = orderAmount.intValue() * 10;
         memberService.addUserPoints(userId, pointsToAdd, "PURCHASE", orderId, "购买商品获得积分");
     }
 

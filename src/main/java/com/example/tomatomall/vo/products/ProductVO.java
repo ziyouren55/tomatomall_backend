@@ -19,6 +19,7 @@ public class ProductVO
     private String description;
     private String cover;
     private String detail;
+    private Integer salesCount;
     private Set<Specification> specifications;
 
     public Product toPO()
@@ -31,7 +32,8 @@ public class ProductVO
         product.setDescription(description);
         product.setCover(cover);
         product.setDetail(detail);
-        product.setSpecifications(specifications);
+        product.setSalesCount(salesCount);
+//        product.setSpecifications(specifications);
 
         return product;
     }
