@@ -24,9 +24,4 @@ public interface ProductService
 
     StockpileVO getProductStockpile(Integer productId);
 
-    String addBookComment(Integer productId, BookCommentVO bookCommentVO);
-
-    Set<BookCommentVO> getBookComment(Integer productId);
-
-    String deleteBookComment(Integer Id);
 }

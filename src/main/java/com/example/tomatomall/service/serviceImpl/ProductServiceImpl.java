@@ -122,36 +122,6 @@ public class ProductServiceImpl implements ProductService
             throw TomatoMallException.productNotFind();
     }
 
-    @Override
-    public String addBookComment(Integer productId, BookCommentVO bookCommentVO) {
-        Optional<Product> product = productRepository.findById(productId);
-        if (product.isPresent()){
-            bookCommentRepository.save(bookCommentVO.toPO());
-        } else {
-            throw TomatoMallException.productNotFind();
-        }
-        return "上传成功";
-    }
 
-    @Override
-    public Set<BookCommentVO> getBookComment(Integer productId) {
-        List<BookComment> Bookcomments = bookCommentRepository.findByProductId(productId);
-        if (Bookcomments.isEmpty()) {
-            throw TomatoMallException.productNotFind();
-        }
-        return Bookcomments.stream().map(BookComment::toVO).collect(Collectors.toSet());
-
-    }
-
-    @Override
-    public String deleteBookComment(Integer id) {
-        Optional<BookComment> bookComment = bookCommentRepository.findById(id);
-        if (bookComment.isPresent()) {
-            bookCommentRepository.delete(bookComment.get());
-            return "删除成功";
-        } else {
-            throw new RuntimeException("未找到该评论");
-        }
-    }
 
 }

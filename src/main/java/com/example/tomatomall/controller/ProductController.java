@@ -61,18 +61,5 @@ public class ProductController
         return Response.buildSuccess(productService.getProductStockpile(productId));
     }
 
-    @PostMapping("/bookComment/{productId}")
-    public Response addBookComment(@PathVariable("productId") Integer productId, @RequestBody BookCommentVO bookCommentVO){
-        return Response.buildSuccess(productService.addBookComment(productId, bookCommentVO));
-    }
 
-    @GetMapping("/bookComment/{productId}")
-    public Response getBookComment(@PathVariable("productId") Integer productId){
-        return Response.buildSuccess(productService.getBookComment(productId));
-    }
-
-    @DeleteMapping("/bookComment/{id}")
-    public Response deleteBookComment(@PathVariable("Id") Integer id){
-        return Response.buildSuccess(productService.deleteBookComment(id));
-    }
 }
