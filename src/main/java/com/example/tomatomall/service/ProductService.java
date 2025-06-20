@@ -1,10 +1,12 @@
 package com.example.tomatomall.service;
 
+import com.example.tomatomall.vo.products.BookCommentVO;
 import com.example.tomatomall.vo.products.ProductVO;
 import com.example.tomatomall.vo.products.StockpileVO;
 
 import javax.persistence.criteria.CriteriaBuilder;
 import java.util.List;
+import java.util.Set;
 
 public interface ProductService
 {
@@ -17,7 +19,6 @@ public interface ProductService
     ProductVO createProduct(ProductVO productVO);
 
     String deleteProduct(Integer id);
-
 
     String updateProductStockpile(Integer productId, Integer amount);
 

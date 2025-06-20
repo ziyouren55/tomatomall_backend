@@ -1,5 +1,6 @@
 package com.example.tomatomall.vo.products;
 
+import com.example.tomatomall.po.BookComment;
 import com.example.tomatomall.po.Product;
 import com.example.tomatomall.po.Specification;
 import lombok.Getter;
@@ -21,6 +22,7 @@ public class ProductVO
     private String detail;
     private Integer salesCount;
     private Set<Specification> specifications;
+    private Set<BookComment> bookComments;
 
     public Product toPO()
     {

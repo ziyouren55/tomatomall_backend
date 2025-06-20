@@ -1,12 +1,15 @@
 package com.example.tomatomall.service.serviceImpl;
 
 import com.example.tomatomall.exception.TomatoMallException;
+import com.example.tomatomall.po.BookComment;
 import com.example.tomatomall.po.Product;
 import com.example.tomatomall.po.Stockpile;
+import com.example.tomatomall.repository.BookCommentRepository;
 import com.example.tomatomall.repository.ProductRepository;
 import com.example.tomatomall.repository.StockpileRepository;
 import com.example.tomatomall.service.ProductService;
 import com.example.tomatomall.util.MyBeanUtil;
+import com.example.tomatomall.vo.products.BookCommentVO;
 import com.example.tomatomall.vo.products.ProductVO;
 import com.example.tomatomall.vo.products.StockpileVO;
 import org.springframework.beans.BeanUtils;
@@ -16,6 +19,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
 import java.util.Optional;
+import java.util.Set;
 import java.util.stream.Collectors;
 
 @Service
@@ -25,6 +29,9 @@ public class ProductServiceImpl implements ProductService {
 
     @Autowired
     StockpileRepository stockpileRepository;
+
+    @Autowired
+    BookCommentRepository bookCommentRepository;
 
     @Override
     public List<ProductVO> getProductList() {
@@ -70,6 +77,7 @@ public class ProductServiceImpl implements ProductService {
             stockpileVO.setFrozen(0);
             stockpileRepository.save(stockpileVO.toPO());
         }
+
 
         return newProduct.toVO();
     }
