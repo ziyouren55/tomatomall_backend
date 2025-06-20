@@ -1,6 +1,6 @@
 package com.example.tomatomall.po;
 
-import com.example.tomatomall.vo.products.BookCommentVO;
+import com.example.tomatomall.vo.bookComment.BookCommentVO;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
@@ -27,7 +27,6 @@ public class BookComment {
     @Column(name = "comment_text")
     private String comment_text;
 
-    @ManyToOne
     @JoinColumn(name = "product_id", nullable = false)
     @NotNull
     private Integer productId;

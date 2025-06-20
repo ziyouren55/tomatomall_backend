@@ -6,14 +6,16 @@ import com.example.tomatomall.po.Product;
 import com.example.tomatomall.repository.BookCommentRepository;
 import com.example.tomatomall.repository.ProductRepository;
 import com.example.tomatomall.service.BookCommentService;
-import com.example.tomatomall.vo.products.BookCommentVO;
+import com.example.tomatomall.vo.bookComment.BookCommentVO;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Service;
 
 import java.util.List;
 import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
 
+@Service
 public class BookCommentServiceImpl implements BookCommentService {
     @Autowired
     BookCommentRepository bookCommentRepository;

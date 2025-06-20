@@ -1,9 +1,8 @@
 package com.example.tomatomall.controller;
 
 import com.example.tomatomall.service.BookCommentService;
-import com.example.tomatomall.service.OrderService;
 import com.example.tomatomall.vo.Response;
-import com.example.tomatomall.vo.products.BookCommentVO;
+import com.example.tomatomall.vo.bookComment.BookCommentVO;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.*;
 

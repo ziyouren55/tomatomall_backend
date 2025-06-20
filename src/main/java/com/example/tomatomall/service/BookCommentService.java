@@ -1,6 +1,6 @@
 package com.example.tomatomall.service;
 
-import com.example.tomatomall.vo.products.BookCommentVO;
+import com.example.tomatomall.vo.bookComment.BookCommentVO;
 
 import java.util.Set;
 

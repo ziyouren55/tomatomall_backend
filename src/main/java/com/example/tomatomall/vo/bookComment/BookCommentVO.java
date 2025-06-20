@@ -1,12 +1,10 @@
-package com.example.tomatomall.vo.products;
+package com.example.tomatomall.vo.bookComment;
 
 import com.example.tomatomall.po.BookComment;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
-
-import java.awt.print.Book;
 
 @Getter
 @Setter
