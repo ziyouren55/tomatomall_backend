@@ -55,11 +55,14 @@ public class CartServiceImpl implements CartService {
             throw TomatoMallException.cartItemAlreadyExists();
 
         // 检查库存
-        Optional<Stockpile> stockpile = stockpileRepository.findByProductId(productId);
-        if (!stockpile.isPresent())
+        Optional<Stockpile> stockpileOpt = stockpileRepository.findByProductId(productId);
+        if (!stockpileOpt.isPresent())
             throw TomatoMallException.stockpileNotFind();
-        if (stockpile.get().getAmount() < cartItemVO.getQuantity())
+
+        Stockpile stockpile = stockpileOpt.get();
+        if (stockpile.getAmount() < cartItemVO.getQuantity())
             throw TomatoMallException.cartItemQuantityOutOfStock();
+
 
         Cart newCart = new Cart();
         newCart.setUserId(userId);
@@ -67,6 +70,9 @@ public class CartServiceImpl implements CartService {
         newCart.setQuantity(cartItemVO.getQuantity());
         newCart.setState("SHOW"); // 设置初始状态为SHOW
         cartRepository.save(newCart);
+
+        stockpile.setAmount(stockpile.getAmount() - newCart.getQuantity());
+        stockpileRepository.save(stockpile);
 
         Optional<Cart> cart = cartRepository.findByUserIdAndProductId(userId, productId);
         if (!cart.isPresent())
@@ -86,7 +92,15 @@ public class CartServiceImpl implements CartService {
         Optional<Cart> cart = cartRepository.findByCartItemId(Integer.valueOf(cartItemId));
         if (!cart.isPresent())
             throw TomatoMallException.cartItemNotFind();
+
+        Optional<Stockpile> stockpileOpt = stockpileRepository.findByProductId(cart.get().getProductId());
+        if(!stockpileOpt.isPresent())
+            throw TomatoMallException.stockpileNotFind();
+        Stockpile stockpile = stockpileOpt.get();
+        stockpile.setAmount(stockpile.getAmount() + cart.get().getQuantity());
+        stockpileRepository.save(stockpile);
         cartRepository.deleteById(Integer.valueOf(cartItemId));
+
         return "删除成功";
     }
 
@@ -98,11 +112,23 @@ public class CartServiceImpl implements CartService {
 
         // 检查库存
         Integer productId = cart.get().getProductId();
-        Optional<Stockpile> stockpile = stockpileRepository.findByProductId(productId);
-        if (!stockpile.isPresent())
+        Optional<Stockpile> stockpileOpt = stockpileRepository.findByProductId(productId);
+        if (!stockpileOpt.isPresent())
             throw TomatoMallException.stockpileNotFind();
-        if (stockpile.get().getAmount() < updateQuantityVO.getQuantity())
+
+        Stockpile stockpile = stockpileOpt.get();
+
+        int firstAmount = cart.get().getQuantity();
+        int lastAmount = updateQuantityVO.getQuantity();
+
+        int num = firstAmount - lastAmount;
+        int new_stock = stockpile.getAmount() + num;
+        if (new_stock  < 0)
             throw TomatoMallException.cartItemQuantityOutOfStock();
+
+        stockpile.setAmount(new_stock);
+
+        stockpileRepository.save(stockpile);
 
         cart.get().setQuantity(updateQuantityVO.getQuantity());
         cartRepository.save(cart.get());
@@ -164,7 +190,7 @@ public class CartServiceImpl implements CartService {
                 cartItems.add(newCart.get());
                 Optional<Stockpile> stockpile = stockpileRepository.findByProductId(newCart.get().getProductId());
                 if (stockpile.isPresent()) {
-                    if (stockpile.get().getAmount() < newCart.get().getQuantity()) {
+                    if (stockpile.get().getAmount() < 0) {
                         throw TomatoMallException.cartItemQuantityOutOfStock();
                     } else {
                         Optional<Product> product = productRepository.findById(newCart.get().getProductId());

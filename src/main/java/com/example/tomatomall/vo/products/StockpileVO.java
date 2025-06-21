@@ -14,6 +14,7 @@ public class StockpileVO
 {
     private Integer id;
     private Integer productId;
+    private String productName;
     private Integer amount;
     private Integer frozen;
 
@@ -22,6 +23,7 @@ public class StockpileVO
         Stockpile stockpile = new Stockpile();
         stockpile.setId(id);
         stockpile.setProductId(productId);
+        stockpile.setProductName(productName);
         stockpile.setAmount(amount);
         stockpile.setFrozen(frozen);
         return stockpile;

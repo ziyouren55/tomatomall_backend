@@ -18,11 +18,15 @@ import javax.validation.constraints.NotNull;
 public class Stockpile
 {
     @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Integer id;
 
     @Column(name = "product_id")
     @NotNull
     private Integer productId;
+
+    @Column(name = "product_name")
+    private String productName;
 
     // 可卖库存
     @NotNull
@@ -37,6 +41,7 @@ public class Stockpile
         StockpileVO stockpileVO = new StockpileVO();
         stockpileVO.setId(id);
         stockpileVO.setFrozen(frozen);
+        stockpileVO.setProductName(productName);
         stockpileVO.setAmount(amount);
         stockpileVO.setProductId(productId);
 
