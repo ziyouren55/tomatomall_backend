@@ -17,4 +17,5 @@ public class CartItemVO
     private String cover;
     private String detail;
     private Integer quantity;
+    private String state;
 }

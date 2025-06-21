@@ -19,8 +19,7 @@ import java.util.List;
 import java.util.Optional;
 
 @Service
-public class CartServiceImpl implements CartService
-{
+public class CartServiceImpl implements CartService {
 
     @Autowired
     ProductRepository productRepository;
@@ -40,38 +39,41 @@ public class CartServiceImpl implements CartService
     @Autowired
     AccountRepository accountRepository;
 
+    @Autowired
+    CartsOrdersRelationRepository cartsOrdersRelationRepository;
+
     @Override
-    public CartItemVO addProductToCart(CartItemVO cartItemVO, Integer userId)
-    {
+    public CartItemVO addProductToCart(CartItemVO cartItemVO, Integer userId) {
         Integer productId = Integer.valueOf(cartItemVO.getProductId());
 
         Optional<Product> product = productRepository.findById(productId);
-        if(!product.isPresent())
+        if (!product.isPresent())
             throw TomatoMallException.productNotFind();
 
         Optional<Cart> cartCheck = cartRepository.findByUserIdAndProductId(userId, productId);
-        if(cartCheck.isPresent())
+        if (cartCheck.isPresent())
             throw TomatoMallException.cartItemAlreadyExists();
 
-        //检查库存
+        // 检查库存
         Optional<Stockpile> stockpile = stockpileRepository.findByProductId(productId);
         if (!stockpile.isPresent())
             throw TomatoMallException.stockpileNotFind();
-        if(stockpile.get().getAmount() < cartItemVO.getQuantity())
+        if (stockpile.get().getAmount() < cartItemVO.getQuantity())
             throw TomatoMallException.cartItemQuantityOutOfStock();
 
         Cart newCart = new Cart();
         newCart.setUserId(userId);
         newCart.setProductId(Integer.valueOf(cartItemVO.getProductId()));
         newCart.setQuantity(cartItemVO.getQuantity());
+        newCart.setState("SHOW"); // 设置初始状态为SHOW
         cartRepository.save(newCart);
 
         Optional<Cart> cart = cartRepository.findByUserIdAndProductId(userId, productId);
-        if(!cart.isPresent())
+        if (!cart.isPresent())
             throw TomatoMallException.cartItemNotFind();
 
         CartItemVO newCartItemVO = new CartItemVO();
-        BeanUtils.copyProperties(product.get(),newCartItemVO);
+        BeanUtils.copyProperties(product.get(), newCartItemVO);
         newCartItemVO.setProductId(String.valueOf(productId));
         newCartItemVO.setCartItemId(String.valueOf(cart.get().getCartItemId()));
         newCartItemVO.setQuantity(cartItemVO.getQuantity());
@@ -80,26 +82,24 @@ public class CartServiceImpl implements CartService
     }
 
     @Override
-    public String deleteProductFromCart(String cartItemId)
-    {
+    public String deleteProductFromCart(String cartItemId) {
         Optional<Cart> cart = cartRepository.findByCartItemId(Integer.valueOf(cartItemId));
-        if(!cart.isPresent())
+        if (!cart.isPresent())
             throw TomatoMallException.cartItemNotFind();
         cartRepository.deleteById(Integer.valueOf(cartItemId));
         return "删除成功";
     }
 
     @Override
-    public String updateCartItemQuantity(String cartItemId, UpdateQuantityVO updateQuantityVO, Integer userId)
-    {
+    public String updateCartItemQuantity(String cartItemId, UpdateQuantityVO updateQuantityVO, Integer userId) {
         Optional<Cart> cart = cartRepository.findByCartItemId(Integer.valueOf(cartItemId));
-        if(!cart.isPresent())
+        if (!cart.isPresent())
             throw TomatoMallException.cartItemNotFind();
 
-        //检查库存
+        // 检查库存
         Integer productId = cart.get().getProductId();
         Optional<Stockpile> stockpile = stockpileRepository.findByProductId(productId);
-        if(!stockpile.isPresent())
+        if (!stockpile.isPresent())
             throw TomatoMallException.stockpileNotFind();
         if (stockpile.get().getAmount() < updateQuantityVO.getQuantity())
             throw TomatoMallException.cartItemQuantityOutOfStock();
@@ -110,36 +110,36 @@ public class CartServiceImpl implements CartService
     }
 
     @Override
-    public CartItemsVO getProductListFromCart(Integer userId)
-    {
+    public CartItemsVO getProductListFromCart(Integer userId) {
         List<Cart> cartList = cartRepository.findAll();
         CartItemsVO cartItemsVO = new CartItemsVO();
         List<CartItemVO> cartItemVOS = new ArrayList<>();
         double totalAmount = 0.0;
-        for (Cart cart : cartList)
-        {
-            CartItemVO cartItemVO = toCartItemVO(cart);
-            cartItemVOS.add(cartItemVO);
-            totalAmount = totalAmount + cartItemVO.getPrice();
+        for (Cart cart : cartList) {
+            // 只显示SHOW状态的购物车项
+            if ("SHOW".equals(cart.getState())) {
+                CartItemVO cartItemVO = toCartItemVO(cart);
+                cartItemVOS.add(cartItemVO);
+                totalAmount = totalAmount + cartItemVO.getPrice();
+            }
         }
 
         cartItemsVO.setCartItems(cartItemVOS);
-        cartItemsVO.setTotal(cartList.size());
+        cartItemsVO.setTotal(cartItemVOS.size());
         cartItemsVO.setTotalAmount(totalAmount);
 
         return cartItemsVO;
     }
 
-    private CartItemVO toCartItemVO(Cart cart)
-    {
+    private CartItemVO toCartItemVO(Cart cart) {
         CartItemVO cartItemVO = new CartItemVO();
 
         Integer productId = cart.getProductId();
         Optional<Product> product = productRepository.findById(productId);
-        if(!product.isPresent())
+        if (!product.isPresent())
             throw TomatoMallException.productNotFind();
 
-        BeanUtils.copyProperties(product.get(),cartItemVO);
+        BeanUtils.copyProperties(product.get(), cartItemVO);
         cartItemVO.setProductId(String.valueOf(productId));
         cartItemVO.setCartItemId(String.valueOf(cart.getCartItemId()));
         cartItemVO.setQuantity(cart.getQuantity());
@@ -181,6 +181,7 @@ public class CartServiceImpl implements CartService
             }
         }
 
+        // 创建订单
         Order order = new Order();
         order.setUserId(userId);
         order.setStatus(OrderStatus.PENDING.name());
@@ -189,6 +190,19 @@ public class CartServiceImpl implements CartService
         order.setTotalAmount(BigDecimal.valueOf(totalAmount));
         orderRepository.save(order);
         Integer orderId = order.getOrderId();
+
+        // 将购物车项状态改为HIDDEN并创建购物车-订单关系
+        for (Cart cartItem : cartItems) {
+            // 更新购物车项状态为HIDDEN
+            cartItem.setState("HIDDEN");
+            cartRepository.save(cartItem);
+
+            // 创建购物车-订单关系
+            CartsOrdersRelation relation = new CartsOrdersRelation();
+            relation.setCartItemId(cartItem.getCartItemId());
+            relation.setOrderId(orderId);
+            cartsOrdersRelationRepository.save(relation);
+        }
 
         OrderSubmitVO orderSubmitVO = new OrderSubmitVO();
         orderSubmitVO.setUsername(username);

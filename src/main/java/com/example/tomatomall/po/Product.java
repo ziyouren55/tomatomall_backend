@@ -53,7 +53,7 @@ public class Product
 
     // 在Product.java中添加销量属性
     @Basic
-    @Column(name = "sales_count", nullable = false)
+    @Column(name = "sales_count")
     private Integer salesCount = 0; // 默认销量为0
 
     //todo specification的处理

@@ -3,31 +3,34 @@ package com.example.tomatomall.service.serviceImpl;
 import com.alipay.api.AlipayApiException;
 import com.example.tomatomall.enums.OrderStatus;
 import com.example.tomatomall.exception.TomatoMallException;
-import com.example.tomatomall.po.Cart;
-import com.example.tomatomall.po.CartsOrdersRelation;
-import com.example.tomatomall.po.Order;
-import com.example.tomatomall.po.Stockpile;
-import com.example.tomatomall.repository.CartRepository;
-import com.example.tomatomall.repository.CartsOrdersRelationRepository;
-import com.example.tomatomall.repository.OrderRepository;
-import com.example.tomatomall.repository.StockpileRepository;
+import com.example.tomatomall.po.*;
+import com.example.tomatomall.repository.*;
 import com.example.tomatomall.service.ForumService;
 import com.example.tomatomall.service.OrderService;
 import com.example.tomatomall.util.AlipayUtil;
+import com.example.tomatomall.vo.shopping.CartItemVO;
+import com.example.tomatomall.vo.shopping.OrderVO;
 import com.example.tomatomall.vo.shopping.PaymentResponseVO;
+import org.springframework.beans.BeanUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 import javax.servlet.http.HttpServletRequest;
 import java.math.BigDecimal;
+import java.util.ArrayList;
+import java.util.Comparator;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.stream.Collectors;
 
 @Service
 public class OrderServiceImpl implements OrderService {
     @Autowired
     OrderRepository orderRepository;
+
+    @Autowired
+    AccountRepository accountRepository;
 
     @Autowired
     StockpileRepository stockpileRepository;
@@ -44,6 +47,76 @@ public class OrderServiceImpl implements OrderService {
     @Autowired
     AlipayUtil alipayUtil;
 
+    @Autowired
+    ProductRepository productRepository;
+
+    @Override
+    public List<OrderVO> getAllOrders() {
+        List<OrderVO> ordersList = orderRepository.findAll().stream().map(Order::toVO).collect(Collectors.toList());
+
+        for (OrderVO order : ordersList) {
+            Optional<Account> account = accountRepository.findById(order.getUserId());
+            if (!account.isPresent())
+                throw TomatoMallException.usernameNotFind();
+            order.setName(account.get().getName());
+            order.setAddress(account.get().getUsername());
+            order.setPhone(account.get().getTelephone());
+
+            // 获取订单关联的购物车项
+            List<Integer> cartItemIds = cartsOrdersRelationRepository.findCartItemIdsByOrderId(order.getOrderId());
+            List<CartItemVO> cartItems = new ArrayList<>();
+
+            for (Integer cartItemId : cartItemIds) {
+                Optional<Cart> cartOpt = cartRepository.findById(cartItemId);
+                if (cartOpt.isPresent()) {
+                    Cart cart = cartOpt.get();
+
+                    // 转换为CartItemVO
+                    CartItemVO cartItemVO = new CartItemVO();
+                    cartItemVO.setCartItemId(String.valueOf(cart.getCartItemId()));
+                    cartItemVO.setQuantity(cart.getQuantity());
+                    if (cart.getState().equals("SHOW")) {
+                        cart.setState("HIDDEN");
+                        cartRepository.save(cart);
+                    }
+                    cartItemVO.setState(cart.getState());
+
+                    // 获取商品信息
+                    Optional<Product> productOpt = productRepository.findById(cart.getProductId());
+                    if (productOpt.isPresent()) {
+                        Product product = productOpt.get();
+                        BeanUtils.copyProperties(product, cartItemVO);
+                        cartItemVO.setProductId(String.valueOf(product.getId()));
+                    }
+
+                    cartItems.add(cartItemVO);
+                }
+            }
+
+            order.setCartItems(cartItems);
+        }
+
+        // 按照订单状态排序，PENDING状态优先
+        ordersList.sort(new Comparator<OrderVO>() {
+            @Override
+            public int compare(OrderVO o1, OrderVO o2) {
+                // PENDING状态的订单排在前面
+                if (OrderStatus.PENDING.name().equals(o1.getStatus())
+                        && !OrderStatus.PENDING.name().equals(o2.getStatus())) {
+                    return -1;
+                } else if (!OrderStatus.PENDING.name().equals(o1.getStatus())
+                        && OrderStatus.PENDING.name().equals(o2.getStatus())) {
+                    return 1;
+                } else {
+                    // 如果状态相同，按照创建时间倒序排列（最新的在前面）
+                    return o2.getCreateTime().compareTo(o1.getCreateTime());
+                }
+            }
+        });
+
+        return ordersList;
+    }
+
     @Override
     public PaymentResponseVO initiatePayment(Integer orderId) {
         Optional<Order> orderOpt = orderRepository.findById(orderId);
@@ -55,10 +128,9 @@ public class OrderServiceImpl implements OrderService {
         try {
             // 调用AlipayUtil生成支付表单
             String paymentForm = alipayUtil.generatePayForm(
-                String.valueOf(orderId),
-                order.getTotalAmount().toString(),
-                "TomatoMall订单支付"
-            );
+                    String.valueOf(orderId),
+                    order.getTotalAmount().toString(),
+                    "TomatoMall订单支付");
 
             PaymentResponseVO response = new PaymentResponseVO();
             response.setOrderId(String.valueOf(orderId));
@@ -114,8 +186,7 @@ public class OrderServiceImpl implements OrderService {
     }
 
     @Override
-    public void reduceStockpile(Integer orderId)
-    {
+    public void reduceStockpile(Integer orderId) {
         List<Integer> cartItemIdList = cartsOrdersRelationRepository.findCartItemIdsByOrderId(orderId);
         // 遍历 cartItemId 列表，查询对应的 Cart 条目
         for (Integer cartItemId : cartItemIdList) {
@@ -129,8 +200,7 @@ public class OrderServiceImpl implements OrderService {
 
             // 查询对应的 Stockpile 条目
             Optional<Stockpile> stockpileOptional = stockpileRepository.findByProductId(productId);
-            if (!stockpileOptional.isPresent())
-            {
+            if (!stockpileOptional.isPresent()) {
                 throw TomatoMallException.stockpileNotFind();
             }
             Stockpile stockpile = stockpileOptional.get();
@@ -142,23 +212,23 @@ public class OrderServiceImpl implements OrderService {
     }
 
     /**
- * 更新订单中商品的销量并检查是否需要创建论坛
- */
-private void updateProductSalesAndCheckForum(Integer orderId) {
-    // 获取订单中的所有商品和数量
-    List<CartsOrdersRelation> relations = cartsOrdersRelationRepository.findByOrderId(orderId);
+     * 更新订单中商品的销量并检查是否需要创建论坛
+     */
+    private void updateProductSalesAndCheckForum(Integer orderId) {
+        // 获取订单中的所有商品和数量
+        List<CartsOrdersRelation> relations = cartsOrdersRelationRepository.findByOrderId(orderId);
 
-    for (CartsOrdersRelation relation : relations) {
-        Optional<Cart> cartOpt = cartRepository.findByCartItemId(relation.getCartItemId());
-        if (cartOpt.isPresent()) {
-            Cart cart = cartOpt.get();
-            Integer productId = cart.getProductId();
-            Integer quantity = cart.getQuantity();
+        for (CartsOrdersRelation relation : relations) {
+            Optional<Cart> cartOpt = cartRepository.findByCartItemId(relation.getCartItemId());
+            if (cartOpt.isPresent()) {
+                Cart cart = cartOpt.get();
+                Integer productId = cart.getProductId();
+                Integer quantity = cart.getQuantity();
 
-            // 更新销量并检查是否需要创建论坛
-            forumService.incrementSalesAndCheckForum(productId, quantity);
+                // 更新销量并检查是否需要创建论坛
+                forumService.incrementSalesAndCheckForum(productId, quantity);
+            }
         }
     }
-}
 
 }

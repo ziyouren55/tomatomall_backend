@@ -1,5 +1,6 @@
 package com.example.tomatomall.service;
 
+import com.example.tomatomall.po.Stockpile;
 import com.example.tomatomall.vo.products.ProductVO;
 import com.example.tomatomall.vo.products.StockpileVO;
 
@@ -21,4 +22,5 @@ public interface ProductService
 
     StockpileVO getProductStockpile(Integer productId);
 
+    List<StockpileVO> getAllStockpile();
 }

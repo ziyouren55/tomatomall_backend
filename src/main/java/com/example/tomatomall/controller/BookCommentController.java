@@ -12,17 +12,17 @@ public class BookCommentController {
 
     @Autowired
     BookCommentService bookCommentService;
-    @PostMapping("/bookComment/{productId}")
+    @PostMapping("/{productId}")
     public Response addBookComment(@PathVariable("productId") Integer productId, @RequestBody BookCommentVO bookCommentVO){
         return Response.buildSuccess(bookCommentService.addBookComment(productId, bookCommentVO));
     }
 
-    @GetMapping("/bookComment/{productId}")
+    @GetMapping("/{productId}")
     public Response getBookComment(@PathVariable("productId") Integer productId){
         return Response.buildSuccess(bookCommentService.getBookComment(productId));
     }
 
-    @DeleteMapping("/bookComment/{id}")
+    @DeleteMapping("/{id}")
     public Response deleteBookComment(@PathVariable("Id") Integer id){
         return Response.buildSuccess(bookCommentService.deleteBookComment(id));
     }

@@ -21,8 +21,6 @@ public class ProductVO
     private String cover;
     private String detail;
     private Integer salesCount;
-    private Set<Specification> specifications;
-    private Set<BookComment> bookComments;
 
     public Product toPO()
     {

@@ -58,5 +58,10 @@ public class ProductController
         return Response.buildSuccess(productService.getProductStockpile(productId));
     }
 
+    @GetMapping("/stockpile")
+    public Response getAllStockpile()
+    {
+        return Response.buildSuccess(productService.getAllStockpile());
+    }
 
 }

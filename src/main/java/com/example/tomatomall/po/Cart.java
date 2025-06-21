@@ -33,6 +33,9 @@ public class Cart
         columnDefinition = "INT DEFAULT 1 COMMENT '商品数量，默认为1'")
     private Integer quantity = 1;
 
+    @Column(name = "state",nullable = false)
+    private String state = "SHOW";
+
 //    @ManyToOne(cascade = CascadeType.ALL)
 //    @JoinColumn(name = "account",nullable = false,
 //            foreignKey = @ForeignKey(name = "fk_user_cart"))
