@@ -58,8 +58,28 @@ public class LoginInterceptor implements HandlerInterceptor
         String path = request.getRequestURI();
         String method = request.getMethod();
 
-        // 示例：POST /api/accounts 放行
+        // 注册接口：POST /api/accounts
         if ("POST".equalsIgnoreCase(method) && "/api/accounts".equals(path)) {
+            return true;
+        }
+
+        // 商品列表接口：GET /api/products（不包括商品详情 /api/products/{id}）
+        if ("GET".equalsIgnoreCase(method) && "/api/products".equals(path)) {
+            return true;
+        }
+
+        // 论坛列表接口：GET /api/forums（不包括论坛详情 /api/forums/{id}）
+        if ("GET".equalsIgnoreCase(method) && "/api/forums".equals(path)) {
+            return true;
+        }
+
+        // 活跃论坛接口：GET /api/forums/active
+        if ("GET".equalsIgnoreCase(method) && "/api/forums/active".equals(path)) {
+            return true;
+        }
+
+        // 广告列表接口：GET /api/advertisements
+        if ("GET".equalsIgnoreCase(method) && "/api/advertisements".equals(path)) {
             return true;
         }
 

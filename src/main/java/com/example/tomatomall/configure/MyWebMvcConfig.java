@@ -25,7 +25,15 @@ public class MyWebMvcConfig implements WebMvcConfigurer {
     public void addInterceptors(InterceptorRegistry registry) {
         registry.addInterceptor(loginInterceptor)
                 .addPathPatterns("/**")
-                .excludePathPatterns("/api/accounts/login")
+                // 排除不需要登录的公开接口
+                .excludePathPatterns(
+                        "/api/accounts/login",           // 登录接口
+                        "/api/accounts",                  // 注册接口（POST）
+                        "/api/products",                  // 商品列表接口（GET）- 允许未登录用户浏览
+                        "/api/forums",                    // 论坛列表接口（GET）
+                        "/api/forums/active",             // 活跃论坛接口（GET）
+                        "/api/advertisements"             // 广告列表接口（GET）
+                )
                 .order(1);
     }
 
