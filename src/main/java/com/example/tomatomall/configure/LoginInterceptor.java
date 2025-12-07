@@ -88,6 +88,11 @@ public class LoginInterceptor implements HandlerInterceptor
             return true;
         }
 
+        // 图片上传接口：POST /api/images（允许未登录用户上传，用于注册时上传头像等场景）
+        if ("POST".equalsIgnoreCase(method) && "/api/images".equals(path)) {
+            return true;
+        }
+
         // 其他白名单规则可在此扩展
         return false;
     }

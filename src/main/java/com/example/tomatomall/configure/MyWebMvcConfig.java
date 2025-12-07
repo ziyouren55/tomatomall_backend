@@ -33,7 +33,8 @@ public class MyWebMvcConfig implements WebMvcConfigurer {
                         "/api/products/search",          // 商品搜索接口（GET）- 允许未登录用户搜索
                         "/api/forums",                    // 论坛列表接口（GET）
                         "/api/forums/active",             // 活跃论坛接口（GET）
-                        "/api/advertisements"             // 广告列表接口（GET）
+                        "/api/advertisements",            // 广告列表接口（GET）
+                        "/api/images"                     // 图片上传接口（POST）- 允许未登录用户上传，用于注册时上传头像等场景
                 )
                 .order(1);
     }
