@@ -26,6 +26,37 @@ import java.util.stream.Collectors;
 
 @Service
 public class OrderServiceImpl implements OrderService {
+    
+    /**
+     * 订单排序比较器：PENDING状态的订单排在前面，相同状态按创建时间倒序排列
+     * 使用静态内部类避免生成匿名内部类
+     */
+    private static class OrderComparator implements Comparator<OrderVO> {
+        @Override
+        public int compare(OrderVO o1, OrderVO o2) {
+            // PENDING状态的订单排在前面
+            if (OrderStatus.PENDING.name().equals(o1.getStatus())
+                    && !OrderStatus.PENDING.name().equals(o2.getStatus())) {
+                return -1;
+            } else if (!OrderStatus.PENDING.name().equals(o1.getStatus())
+                    && OrderStatus.PENDING.name().equals(o2.getStatus())) {
+                return 1;
+            } else {
+                // 如果状态相同，按照创建时间倒序排列（最新的在前面）
+                if (o1.getCreateTime() == null && o2.getCreateTime() == null) {
+                    return 0;
+                } else if (o1.getCreateTime() == null) {
+                    return 1;
+                } else if (o2.getCreateTime() == null) {
+                    return -1;
+                }
+                return o2.getCreateTime().compareTo(o1.getCreateTime());
+            }
+        }
+    }
+    
+    private static final Comparator<OrderVO> ORDER_COMPARATOR = new OrderComparator();
+    
     @Autowired
     OrderRepository orderRepository;
 
@@ -60,22 +91,7 @@ public class OrderServiceImpl implements OrderService {
         }
 
         // 按照订单状态排序，PENDING状态优先
-        ordersList.sort(new Comparator<OrderVO>() {
-            @Override
-            public int compare(OrderVO o1, OrderVO o2) {
-                // PENDING状态的订单排在前面
-                if (OrderStatus.PENDING.name().equals(o1.getStatus())
-                        && !OrderStatus.PENDING.name().equals(o2.getStatus())) {
-                    return -1;
-                } else if (!OrderStatus.PENDING.name().equals(o1.getStatus())
-                        && OrderStatus.PENDING.name().equals(o2.getStatus())) {
-                    return 1;
-                } else {
-                    // 如果状态相同，按照创建时间倒序排列（最新的在前面）
-                    return o2.getCreateTime().compareTo(o1.getCreateTime());
-                }
-            }
-        });
+        ordersList.sort(ORDER_COMPARATOR);
 
         return ordersList;
     }
@@ -112,22 +128,7 @@ public class OrderServiceImpl implements OrderService {
         }
 
         // 按照订单状态排序，PENDING状态优先
-        ordersList.sort(new Comparator<OrderVO>() {
-            @Override
-            public int compare(OrderVO o1, OrderVO o2) {
-                // PENDING状态的订单排在前面
-                if (OrderStatus.PENDING.name().equals(o1.getStatus())
-                        && !OrderStatus.PENDING.name().equals(o2.getStatus())) {
-                    return -1;
-                } else if (!OrderStatus.PENDING.name().equals(o1.getStatus())
-                        && OrderStatus.PENDING.name().equals(o2.getStatus())) {
-                    return 1;
-                } else {
-                    // 如果状态相同，按照创建时间倒序排列（最新的在前面）
-                    return o2.getCreateTime().compareTo(o1.getCreateTime());
-                }
-            }
-        });
+        ordersList.sort(ORDER_COMPARATOR);
 
         return ordersList;
     }
