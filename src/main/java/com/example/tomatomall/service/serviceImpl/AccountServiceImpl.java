@@ -1,12 +1,11 @@
 package com.example.tomatomall.service.serviceImpl;
 
+import com.example.tomatomall.enums.UserRole;
 import com.example.tomatomall.exception.TomatoMallException;
 import com.example.tomatomall.po.Account;
-import com.example.tomatomall.po.Cart;
 import com.example.tomatomall.repository.AccountRepository;
 import com.example.tomatomall.repository.CartRepository;
 import com.example.tomatomall.service.AccountService;
-import com.example.tomatomall.service.CartService;
 import com.example.tomatomall.util.MyBeanUtil;
 import com.example.tomatomall.util.TokenUtil;
 import com.example.tomatomall.vo.accounts.AccountVO;
@@ -39,6 +38,16 @@ public class AccountServiceImpl implements AccountService {
         Optional<Account> account = accountRepository.findByUsername(accountVO.getUsername());
         if (account.isPresent()) {
             throw TomatoMallException.usernameAlreadyExists();
+        }
+
+        // 验证并规范化角色
+        if (accountVO.getRole() == null || accountVO.getRole().trim().isEmpty()) {
+            accountVO.setRole(UserRole.USER.name()); // 默认角色
+        } else {
+            // 验证角色是否有效
+            if (!UserRole.isValid(accountVO.getRole())) {
+                throw TomatoMallException.invalidRole();
+            }
         }
 
         String rawPassword = accountVO.getPassword();

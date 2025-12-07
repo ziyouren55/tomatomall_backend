@@ -66,4 +66,9 @@ public class TomatoMallException extends RuntimeException{
     {
         return new TomatoMallException("订单不存在");
     }
+
+    public static TomatoMallException invalidRole()
+    {
+        return new TomatoMallException("无效的角色类型!");
+    }
 }

@@ -1,5 +1,6 @@
 package com.example.tomatomall.po;
 
+import com.example.tomatomall.enums.UserRole;
 import com.example.tomatomall.vo.accounts.AccountVO;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
@@ -34,9 +35,9 @@ public class Account {
     @Column(name = "avatar")
     private String avatar;
 
-    @Basic
-    @Column(name = "role")
-    private String role;
+    @Convert(converter = com.example.tomatomall.converter.UserRoleConverter.class)
+    @Column(name = "role", nullable = false, columnDefinition = "VARCHAR(20) DEFAULT 'USER'")
+    private UserRole role = UserRole.USER;
 
     @Basic
     @Column(name = "telephone")
@@ -69,7 +70,7 @@ public class Account {
         accountVO.setPassword(password);
         accountVO.setName(name);
         accountVO.setAvatar(avatar);
-        accountVO.setRole(role);
+        accountVO.setRole(role != null ? role.name() : UserRole.USER.name());
         accountVO.setTelephone(telephone);
         accountVO.setEmail(email);
         accountVO.setLocation(location);

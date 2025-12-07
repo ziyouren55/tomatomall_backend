@@ -1,5 +1,6 @@
 package com.example.tomatomall.vo.accounts;
 
+import com.example.tomatomall.enums.UserRole;
 import com.example.tomatomall.po.Account;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
@@ -16,12 +17,19 @@ public class AccountVO
     private String password;
     private String name;
     private String avatar;
-    private String role;
+    private String role; // 保持为 String 类型以兼容 JSON 序列化
     private String telephone;
     private String email;
     private Integer memberLevelId;
     private Boolean isMember;
     private String location;
+
+    /**
+     * 获取角色枚举值
+     */
+    public UserRole getRoleEnum() {
+        return UserRole.fromString(role);
+    }
 
     public Account toPO()
     {
@@ -31,7 +39,8 @@ public class AccountVO
         account.setPassword(password);
         account.setName(name);
         account.setAvatar(avatar);
-        account.setRole(role);
+        // 将字符串角色转换为枚举，如果为空则使用默认值
+        account.setRole(role != null ? UserRole.fromString(role) : UserRole.USER);
         account.setTelephone(telephone);
         account.setEmail(email);
         account.setLocation(location);
