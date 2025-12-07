@@ -7,11 +7,15 @@ import com.example.tomatomall.repository.ProductRepository;
 import com.example.tomatomall.repository.StockpileRepository;
 import com.example.tomatomall.service.ProductService;
 import com.example.tomatomall.util.MyBeanUtil;
+import com.example.tomatomall.vo.PageResultVO;
 import com.example.tomatomall.vo.products.ProductVO;
 import com.example.tomatomall.vo.products.SearchResultVO;
 import com.example.tomatomall.vo.products.StockpileVO;
 import org.springframework.beans.BeanUtils;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -29,8 +33,59 @@ public class ProductServiceImpl implements ProductService {
     StockpileRepository stockpileRepository;
 
     @Override
-    public List<ProductVO> getProductList() {
-        return productRepository.findAll().stream().map(Product::toVO).collect(Collectors.toList());
+    public SearchResultVO getProductList(Integer page, Integer pageSize, String sortBy, String sortOrder) {
+        // 参数验证和默认值
+        if (page == null || page < 0) {
+            page = 0;
+        }
+        if (pageSize == null || pageSize <= 0) {
+            pageSize = 20;
+        }
+        if (pageSize > 100) {
+            pageSize = 100; // 限制最大页面大小
+        }
+
+        // 构建排序
+        Pageable pageable;
+        if (sortBy != null && !sortBy.isEmpty()) {
+            Sort.Direction direction = "desc".equalsIgnoreCase(sortOrder) 
+                ? Sort.Direction.DESC 
+                : Sort.Direction.ASC;
+            
+            Sort sort;
+            switch (sortBy.toLowerCase()) {
+                case "price":
+                    sort = Sort.by(direction, "price");
+                    break;
+                case "salescount":
+                case "sales_count":
+                    sort = Sort.by(direction, "salesCount");
+                    break;
+                case "rate":
+                    sort = Sort.by(direction, "rate");
+                    break;
+                default:
+                    sort = Sort.by(Sort.Direction.DESC, "id"); // 默认按ID降序
+            }
+            pageable = PageRequest.of(page, pageSize, sort);
+        } else {
+            // 默认按ID降序
+            pageable = PageRequest.of(page, pageSize, Sort.by(Sort.Direction.DESC, "id"));
+        }
+
+        // 使用分页查询
+        Page<Product> productPage = productRepository.findAll(pageable);
+        List<ProductVO> productVOs = productPage.getContent().stream()
+            .map(Product::toVO)
+            .collect(Collectors.toList());
+
+        // 构建返回结果
+        return new SearchResultVO(
+            productVOs,
+            productPage.getTotalElements(),
+            page,
+            pageSize
+        );
     }
 
     @Override
@@ -142,8 +197,33 @@ public class ProductServiceImpl implements ProductService {
     }
 
     @Override
-    public List<StockpileVO> getAllStockpile() {
-        return stockpileRepository.findAll().stream().map(Stockpile::toVO).collect(Collectors.toList());
+    public PageResultVO<StockpileVO> getAllStockpile(Integer page, Integer pageSize) {
+        // 参数验证和默认值
+        if (page == null || page < 0) {
+            page = 0;
+        }
+        if (pageSize == null || pageSize <= 0) {
+            pageSize = 20;
+        }
+        if (pageSize > 100) {
+            pageSize = 100; // 限制最大页面大小
+        }
+
+        // 使用分页查询库存
+        Pageable pageable = PageRequest.of(page, pageSize, Sort.by(Sort.Direction.DESC, "id"));
+        Page<Stockpile> stockpilePage = stockpileRepository.findAll(pageable);
+        
+        List<StockpileVO> stockpileVOs = stockpilePage.getContent().stream()
+            .map(Stockpile::toVO)
+            .collect(Collectors.toList());
+
+        // 构建返回结果
+        return new PageResultVO<>(
+            stockpileVOs,
+            stockpilePage.getTotalElements(),
+            page,
+            pageSize
+        );
     }
 
     @Override

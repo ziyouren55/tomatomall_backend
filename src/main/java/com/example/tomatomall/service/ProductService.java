@@ -1,6 +1,7 @@
 package com.example.tomatomall.service;
 
 import com.example.tomatomall.po.Stockpile;
+import com.example.tomatomall.vo.PageResultVO;
 import com.example.tomatomall.vo.products.ProductVO;
 import com.example.tomatomall.vo.products.SearchResultVO;
 import com.example.tomatomall.vo.products.StockpileVO;
@@ -9,7 +10,15 @@ import java.util.List;
 
 public interface ProductService
 {
-    List<ProductVO> getProductList();
+    /**
+     * 获取商品列表（分页）
+     * @param page 页码（从0开始）
+     * @param pageSize 每页数量
+     * @param sortBy 排序字段（price, salesCount, rate）
+     * @param sortOrder 排序方向（asc, desc）
+     * @return 分页结果
+     */
+    SearchResultVO getProductList(Integer page, Integer pageSize, String sortBy, String sortOrder);
 
     ProductVO getProduct(Integer id);
 
@@ -23,7 +32,13 @@ public interface ProductService
 
     StockpileVO getProductStockpile(Integer productId);
 
-    List<StockpileVO> getAllStockpile();
+    /**
+     * 获取所有库存（分页）
+     * @param page 页码（从0开始）
+     * @param pageSize 每页数量
+     * @return 分页结果
+     */
+    PageResultVO<StockpileVO> getAllStockpile(Integer page, Integer pageSize);
 
     /**
      * 搜索商品

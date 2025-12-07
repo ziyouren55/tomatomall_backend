@@ -20,8 +20,12 @@ public class ProductController
     ProductService productService;
 
     @GetMapping
-    public Response getProducts(){
-        return Response.buildSuccess(productService.getProductList());
+    public Response getProducts(
+            @RequestParam(defaultValue = "0") Integer page,
+            @RequestParam(defaultValue = "20") Integer pageSize,
+            @RequestParam(required = false) String sortBy,
+            @RequestParam(required = false) String sortOrder) {
+        return Response.buildSuccess(productService.getProductList(page, pageSize, sortBy, sortOrder));
     }
 
     @GetMapping("/{id}")
@@ -59,9 +63,11 @@ public class ProductController
     }
 
     @GetMapping("/stockpile")
-    public Response getAllStockpile()
+    public Response getAllStockpile(
+            @RequestParam(defaultValue = "0") Integer page,
+            @RequestParam(defaultValue = "20") Integer pageSize)
     {
-        return Response.buildSuccess(productService.getAllStockpile());
+        return Response.buildSuccess(productService.getAllStockpile(page, pageSize));
     }
 
     /**
