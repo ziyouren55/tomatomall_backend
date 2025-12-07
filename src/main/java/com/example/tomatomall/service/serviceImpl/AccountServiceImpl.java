@@ -101,6 +101,11 @@ public class AccountServiceImpl implements AccountService {
 
         BeanUtils.copyProperties(accountVO,account, MyBeanUtil.getNullPropertyNames(accountVO));
 
+        // 单独处理 role 字段，确保使用枚举转换
+        if(accountVO.getRole() != null) {
+            account.setRole(UserRole.fromString(accountVO.getRole()));
+        }
+
         if(accountVO.getPassword() != null)
             account.setPassword(passwordEncoder.encode(account.getPassword()));
 

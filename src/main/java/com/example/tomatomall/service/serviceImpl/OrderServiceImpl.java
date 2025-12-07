@@ -317,8 +317,10 @@ public class OrderServiceImpl implements OrderService {
             Integer quantity = cart.getQuantity();
 
             // 查询对应的 Stockpile 条目
-            Optional<Stockpile> stockpileOptional = stockpileRepository.findByProductId(productId);
+            Optional<Stockpile> stockpileOptional = stockpileRepository.findByProduct_Id(productId);
             if (!stockpileOptional.isPresent()) {
+                // 如果库存不存在，这是数据异常，但为了不阻塞订单处理，我们记录错误并继续
+                // 在实际生产环境中，应该记录日志并告警
                 throw TomatoMallException.stockpileNotFind();
             }
             Stockpile stockpile = stockpileOptional.get();

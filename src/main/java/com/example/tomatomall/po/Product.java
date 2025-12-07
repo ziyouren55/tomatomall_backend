@@ -10,7 +10,6 @@ import javax.persistence.*;
 import javax.validation.constraints.Min;
 import javax.validation.constraints.Max;
 import javax.validation.constraints.NotNull;
-import java.util.Set;
 
 @Getter
 @Setter
@@ -56,11 +55,26 @@ public class Product
     @Column(name = "sales_count")
     private Integer salesCount = 0; // 默认销量为0
 
+    // 商品与库存的一对一关联关系
+    @OneToOne(mappedBy = "product", cascade = CascadeType.ALL, orphanRemoval = true, fetch = FetchType.LAZY)
+    private Stockpile stockpile;
+
     //todo specification的处理
 //   @ElementCollection
 //   @CollectionTable(name = "product_specifications", joinColumns = @JoinColumn(name = "product_id"))
 //   @Column(name = "specifications")
 //   private Set<Specification> specifications;
+
+    // 便捷方法：获取库存数量
+    public Integer getStockAmount() {
+        return stockpile != null ? stockpile.getAmount() : 0;
+    }
+
+    // 便捷方法：获取可用库存（总库存 - 冻结库存）
+    public Integer getAvailableStock() {
+        if (stockpile == null) return 0;
+        return stockpile.getAmount() - stockpile.getFrozen();
+    }
 
     public ProductVO toVO()
     {

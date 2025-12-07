@@ -7,7 +7,6 @@ import lombok.NoArgsConstructor;
 import lombok.Setter;
 
 import javax.persistence.*;
-import javax.validation.constraints.NotBlank;
 import javax.validation.constraints.NotNull;
 
 
@@ -15,35 +14,48 @@ import javax.validation.constraints.NotNull;
 @Setter
 @NoArgsConstructor
 @Entity
+@Table(name = "stockpile")
 public class Stockpile
 {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Integer id;
 
-    @Column(name = "product_id")
-    @NotNull
-    private Integer productId;
-
-    @Column(name = "product_name")
-    private String productName;
+    // 使用JPA关联关系，而不是简单的Integer
+    @OneToOne
+    @JoinColumn(name = "product_id", unique = true, nullable = false)
+    private Product product;
 
     // 可卖库存
     @NotNull
-    private Integer amount;
+    @Column(name = "amount", nullable = false)
+    private Integer amount = 0;
 
     // 冻结库存
     @NotNull
-    private Integer frozen;
+    @Column(name = "frozen", nullable = false)
+    private Integer frozen = 0;
+
+    // 便捷方法：获取可用库存
+    public Integer getAvailableAmount() {
+        return amount - frozen;
+    }
+
+    // 便捷方法：获取商品ID（用于向后兼容）
+    public Integer getProductId() {
+        return product != null ? product.getId() : null;
+    }
 
     public StockpileVO toVO()
     {
         StockpileVO stockpileVO = new StockpileVO();
         stockpileVO.setId(id);
         stockpileVO.setFrozen(frozen);
-        stockpileVO.setProductName(productName);
         stockpileVO.setAmount(amount);
-        stockpileVO.setProductId(productId);
+        if (product != null) {
+            stockpileVO.setProductId(product.getId());
+            stockpileVO.setProductName(product.getTitle());
+        }
 
         return stockpileVO;
     }

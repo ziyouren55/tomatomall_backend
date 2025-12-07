@@ -17,7 +17,7 @@ public class AccountVO
     private String password;
     private String name;
     private String avatar;
-    private String role; // 保持为 String 类型以兼容 JSON 序列化
+    private String role;
     private String telephone;
     private String email;
     private Integer memberLevelId;
