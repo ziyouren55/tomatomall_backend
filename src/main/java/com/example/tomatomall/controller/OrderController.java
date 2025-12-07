@@ -26,6 +26,23 @@ public class OrderController {
         return Response.buildSuccess(orderService.getAllOrders());
     }
 
+    /**
+     * 获取订单详情
+     */
+    @GetMapping("/{orderId}")
+    public Response getOrderById(@PathVariable Integer orderId,
+                                  @RequestAttribute("userId") Integer userId) {
+        return Response.buildSuccess(orderService.getOrderById(orderId, userId));
+    }
+
+    /**
+     * 获取当前用户的订单列表
+     */
+    @GetMapping("/my")
+    public Response getMyOrders(@RequestAttribute("userId") Integer userId) {
+        return Response.buildSuccess(orderService.getOrdersByUserId(userId));
+    }
+
     @PostMapping("/{orderId}/pay")
     public Response initiatePayment(@PathVariable Integer orderId){
         return Response.buildSuccess(orderService.initiatePayment(orderId));

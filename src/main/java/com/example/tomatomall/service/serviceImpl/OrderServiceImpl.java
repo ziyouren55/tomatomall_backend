@@ -54,46 +54,9 @@ public class OrderServiceImpl implements OrderService {
     public List<OrderVO> getAllOrders() {
         List<OrderVO> ordersList = orderRepository.findAll().stream().map(Order::toVO).collect(Collectors.toList());
 
+        // 填充每个订单的详细信息
         for (OrderVO order : ordersList) {
-            Optional<Account> account = accountRepository.findById(order.getUserId());
-            if (!account.isPresent())
-                throw TomatoMallException.usernameNotFind();
-            order.setName(account.get().getName());
-            order.setAddress(account.get().getUsername());
-            order.setPhone(account.get().getTelephone());
-
-            // 获取订单关联的购物车项
-            List<Integer> cartItemIds = cartsOrdersRelationRepository.findCartItemIdsByOrderId(order.getOrderId());
-            List<CartItemVO> cartItems = new ArrayList<>();
-
-            for (Integer cartItemId : cartItemIds) {
-                Optional<Cart> cartOpt = cartRepository.findById(cartItemId);
-                if (cartOpt.isPresent()) {
-                    Cart cart = cartOpt.get();
-
-                    // 转换为CartItemVO
-                    CartItemVO cartItemVO = new CartItemVO();
-                    cartItemVO.setCartItemId(String.valueOf(cart.getCartItemId()));
-                    cartItemVO.setQuantity(cart.getQuantity());
-                    if (cart.getState().equals("SHOW")) {
-                        cart.setState("HIDDEN");
-                        cartRepository.save(cart);
-                    }
-                    cartItemVO.setState(cart.getState());
-
-                    // 获取商品信息
-                    Optional<Product> productOpt = productRepository.findById(cart.getProductId());
-                    if (productOpt.isPresent()) {
-                        Product product = productOpt.get();
-                        BeanUtils.copyProperties(product, cartItemVO);
-                        cartItemVO.setProductId(String.valueOf(product.getId()));
-                    }
-
-                    cartItems.add(cartItemVO);
-                }
-            }
-
-            order.setCartItems(cartItems);
+            enrichOrderVO(order);
         }
 
         // 按照订单状态排序，PENDING状态优先
@@ -115,6 +78,160 @@ public class OrderServiceImpl implements OrderService {
         });
 
         return ordersList;
+    }
+
+    @Override
+    public OrderVO getOrderById(Integer orderId, Integer userId) {
+        // 查找订单
+        Optional<Order> orderOpt = orderRepository.findById(orderId);
+        if (!orderOpt.isPresent()) {
+            throw TomatoMallException.orderNotFound();
+        }
+
+        Order order = orderOpt.get();
+        
+        // 验证订单是否属于该用户
+        if (!order.getUserId().equals(userId)) {
+            throw new TomatoMallException("无权访问该订单");
+        }
+
+        // 转换为VO并填充详细信息
+        OrderVO orderVO = enrichOrderVO(order);
+        return orderVO;
+    }
+
+    @Override
+    public List<OrderVO> getOrdersByUserId(Integer userId) {
+        // 根据用户ID查询订单
+        List<Order> orders = orderRepository.findByUserId(userId);
+        List<OrderVO> ordersList = orders.stream().map(Order::toVO).collect(Collectors.toList());
+
+        // 填充每个订单的详细信息
+        for (OrderVO order : ordersList) {
+            enrichOrderVO(order);
+        }
+
+        // 按照订单状态排序，PENDING状态优先
+        ordersList.sort(new Comparator<OrderVO>() {
+            @Override
+            public int compare(OrderVO o1, OrderVO o2) {
+                // PENDING状态的订单排在前面
+                if (OrderStatus.PENDING.name().equals(o1.getStatus())
+                        && !OrderStatus.PENDING.name().equals(o2.getStatus())) {
+                    return -1;
+                } else if (!OrderStatus.PENDING.name().equals(o1.getStatus())
+                        && OrderStatus.PENDING.name().equals(o2.getStatus())) {
+                    return 1;
+                } else {
+                    // 如果状态相同，按照创建时间倒序排列（最新的在前面）
+                    return o2.getCreateTime().compareTo(o1.getCreateTime());
+                }
+            }
+        });
+
+        return ordersList;
+    }
+
+    /**
+     * 填充订单的详细信息（用户信息、购物车项等）
+     * @param order 订单实体
+     * @return 填充后的订单VO
+     */
+    private OrderVO enrichOrderVO(Order order) {
+        OrderVO orderVO = order.toVO();
+
+        // 获取用户信息
+        Optional<Account> account = accountRepository.findById(order.getUserId());
+        if (!account.isPresent()) {
+            throw TomatoMallException.usernameNotFind();
+        }
+        orderVO.setName(account.get().getName());
+        orderVO.setAddress(account.get().getUsername());
+        orderVO.setPhone(account.get().getTelephone());
+
+        // 获取订单关联的购物车项
+        List<Integer> cartItemIds = cartsOrdersRelationRepository.findCartItemIdsByOrderId(order.getOrderId());
+        List<CartItemVO> cartItems = new ArrayList<>();
+
+        for (Integer cartItemId : cartItemIds) {
+            Optional<Cart> cartOpt = cartRepository.findById(cartItemId);
+            if (cartOpt.isPresent()) {
+                Cart cart = cartOpt.get();
+
+                // 转换为CartItemVO
+                CartItemVO cartItemVO = new CartItemVO();
+                cartItemVO.setCartItemId(String.valueOf(cart.getCartItemId()));
+                cartItemVO.setQuantity(cart.getQuantity());
+                if (cart.getState().equals("SHOW")) {
+                    cart.setState("HIDDEN");
+                    cartRepository.save(cart);
+                }
+                cartItemVO.setState(cart.getState());
+
+                // 获取商品信息
+                Optional<Product> productOpt = productRepository.findById(cart.getProductId());
+                if (productOpt.isPresent()) {
+                    Product product = productOpt.get();
+                    BeanUtils.copyProperties(product, cartItemVO);
+                    cartItemVO.setProductId(String.valueOf(product.getId()));
+                }
+
+                cartItems.add(cartItemVO);
+            }
+        }
+
+        orderVO.setCartItems(cartItems);
+        return orderVO;
+    }
+
+    /**
+     * 填充订单VO的详细信息（重载方法，接受OrderVO参数）
+     * @param orderVO 订单VO
+     * @return 填充后的订单VO
+     */
+    private OrderVO enrichOrderVO(OrderVO orderVO) {
+        // 获取用户信息
+        Optional<Account> account = accountRepository.findById(orderVO.getUserId());
+        if (!account.isPresent()) {
+            throw TomatoMallException.usernameNotFind();
+        }
+        orderVO.setName(account.get().getName());
+        orderVO.setAddress(account.get().getUsername());
+        orderVO.setPhone(account.get().getTelephone());
+
+        // 获取订单关联的购物车项
+        List<Integer> cartItemIds = cartsOrdersRelationRepository.findCartItemIdsByOrderId(orderVO.getOrderId());
+        List<CartItemVO> cartItems = new ArrayList<>();
+
+        for (Integer cartItemId : cartItemIds) {
+            Optional<Cart> cartOpt = cartRepository.findById(cartItemId);
+            if (cartOpt.isPresent()) {
+                Cart cart = cartOpt.get();
+
+                // 转换为CartItemVO
+                CartItemVO cartItemVO = new CartItemVO();
+                cartItemVO.setCartItemId(String.valueOf(cart.getCartItemId()));
+                cartItemVO.setQuantity(cart.getQuantity());
+                if (cart.getState().equals("SHOW")) {
+                    cart.setState("HIDDEN");
+                    cartRepository.save(cart);
+                }
+                cartItemVO.setState(cart.getState());
+
+                // 获取商品信息
+                Optional<Product> productOpt = productRepository.findById(cart.getProductId());
+                if (productOpt.isPresent()) {
+                    Product product = productOpt.get();
+                    BeanUtils.copyProperties(product, cartItemVO);
+                    cartItemVO.setProductId(String.valueOf(product.getId()));
+                }
+
+                cartItems.add(cartItemVO);
+            }
+        }
+
+        orderVO.setCartItems(cartItems);
+        return orderVO;
     }
 
     @Override
