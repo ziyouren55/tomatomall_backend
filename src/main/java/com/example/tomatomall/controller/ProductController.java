@@ -64,4 +64,24 @@ public class ProductController
         return Response.buildSuccess(productService.getAllStockpile());
     }
 
+    /**
+     * 搜索商品
+     * @param keyword 搜索关键词
+     * @param page 页码（从0开始，默认0）
+     * @param pageSize 每页数量（默认20）
+     * @param sortBy 排序字段（price, salesCount, rate）
+     * @param sortOrder 排序方向（asc, desc）
+     * @return 搜索结果
+     */
+    @GetMapping("/search")
+    public Response searchProducts(
+            @RequestParam String keyword,
+            @RequestParam(defaultValue = "0") Integer page,
+            @RequestParam(defaultValue = "20") Integer pageSize,
+            @RequestParam(required = false) String sortBy,
+            @RequestParam(required = false) String sortOrder)
+    {
+        return Response.buildSuccess(productService.searchProducts(keyword, page, pageSize, sortBy, sortOrder));
+    }
+
 }

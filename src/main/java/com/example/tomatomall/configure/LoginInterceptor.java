@@ -68,6 +68,11 @@ public class LoginInterceptor implements HandlerInterceptor
             return true;
         }
 
+        // 商品搜索接口：GET /api/products/search
+        if ("GET".equalsIgnoreCase(method) && "/api/products/search".equals(path)) {
+            return true;
+        }
+
         // 论坛列表接口：GET /api/forums（不包括论坛详情 /api/forums/{id}）
         if ("GET".equalsIgnoreCase(method) && "/api/forums".equals(path)) {
             return true;

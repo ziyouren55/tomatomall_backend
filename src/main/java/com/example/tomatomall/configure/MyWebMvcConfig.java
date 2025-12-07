@@ -30,6 +30,7 @@ public class MyWebMvcConfig implements WebMvcConfigurer {
                         "/api/accounts/login",           // 登录接口
                         "/api/accounts",                  // 注册接口（POST）
                         "/api/products",                  // 商品列表接口（GET）- 允许未登录用户浏览
+                        "/api/products/search",          // 商品搜索接口（GET）- 允许未登录用户搜索
                         "/api/forums",                    // 论坛列表接口（GET）
                         "/api/forums/active",             // 活跃论坛接口（GET）
                         "/api/advertisements"             // 广告列表接口（GET）

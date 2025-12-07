@@ -8,9 +8,11 @@ import com.example.tomatomall.repository.StockpileRepository;
 import com.example.tomatomall.service.ProductService;
 import com.example.tomatomall.util.MyBeanUtil;
 import com.example.tomatomall.vo.products.ProductVO;
+import com.example.tomatomall.vo.products.SearchResultVO;
 import com.example.tomatomall.vo.products.StockpileVO;
 import org.springframework.beans.BeanUtils;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -142,5 +144,152 @@ public class ProductServiceImpl implements ProductService {
     @Override
     public List<StockpileVO> getAllStockpile() {
         return stockpileRepository.findAll().stream().map(Stockpile::toVO).collect(Collectors.toList());
+    }
+
+    @Override
+    public SearchResultVO searchProducts(String keyword, Integer page, Integer pageSize, String sortBy, String sortOrder) {
+        // 参数验证和默认值
+        if (keyword == null || keyword.trim().isEmpty()) {
+            // 如果关键词为空，返回空结果
+            return new SearchResultVO(java.util.Collections.emptyList(), 0L, page, pageSize);
+        }
+
+        // 设置默认值
+        if (page == null || page < 0) {
+            page = 0;
+        }
+        if (pageSize == null || pageSize <= 0) {
+            pageSize = 20;
+        }
+
+        // 关键词预处理：去除多余空格，分割关键词
+        String processedKeyword = keyword.trim().replaceAll("\\s+", " ");
+        String[] keywords = processedKeyword.split("\\s+");
+        
+        // 执行搜索：支持多关键词（AND逻辑，所有关键词都要匹配）
+        List<Product> allMatchedProducts = null;
+        
+        if (keywords.length == 1) {
+            // 单关键词搜索
+            allMatchedProducts = productRepository.findProductsByKeyword(keywords[0].toLowerCase());
+        } else {
+            // 多关键词搜索：先搜索第一个关键词，然后过滤出包含所有关键词的商品
+            List<Product> firstKeywordResults = productRepository.findProductsByKeyword(keywords[0].toLowerCase());
+            allMatchedProducts = firstKeywordResults.stream()
+                .filter(product -> {
+                    // 检查商品是否包含所有关键词
+                    String title = (product.getTitle() != null ? product.getTitle().toLowerCase() : "");
+                    String description = (product.getDescription() != null ? product.getDescription().toLowerCase() : "");
+                    String detail = (product.getDetail() != null ? product.getDetail().toLowerCase() : "");
+                    String allText = title + " " + description + " " + detail;
+                    
+                    // 所有关键词都要在文本中出现
+                    for (int i = 1; i < keywords.length; i++) {
+                        if (!allText.contains(keywords[i].toLowerCase())) {
+                            return false;
+                        }
+                    }
+                    return true;
+                })
+                .collect(Collectors.toList());
+        }
+
+        // 相关性排序：标题匹配优先于描述匹配
+        List<Product> sortedProducts = allMatchedProducts.stream()
+            .sorted((p1, p2) -> {
+                String title1 = (p1.getTitle() != null ? p1.getTitle().toLowerCase() : "");
+                String title2 = (p2.getTitle() != null ? p2.getTitle().toLowerCase() : "");
+                String desc1 = (p1.getDescription() != null ? p1.getDescription().toLowerCase() : "");
+                String desc2 = (p2.getDescription() != null ? p2.getDescription().toLowerCase() : "");
+                
+                // 计算相关性分数
+                int score1 = calculateRelevanceScore(title1, desc1, keywords);
+                int score2 = calculateRelevanceScore(title2, desc2, keywords);
+                
+                // 先按相关性排序（降序），再按ID排序（降序）
+                if (score1 != score2) {
+                    return Integer.compare(score2, score1);
+                }
+                return Integer.compare(p2.getId(), p1.getId());
+            })
+            .collect(Collectors.toList());
+
+        // 应用用户指定的排序
+        if (sortBy != null && !sortBy.isEmpty()) {
+            Sort.Direction direction = "desc".equalsIgnoreCase(sortOrder) 
+                ? Sort.Direction.DESC 
+                : Sort.Direction.ASC;
+            
+            switch (sortBy.toLowerCase()) {
+                case "price":
+                    sortedProducts.sort((p1, p2) -> {
+                        int cmp = Double.compare(p1.getPrice(), p2.getPrice());
+                        return direction == Sort.Direction.ASC ? cmp : -cmp;
+                    });
+                    break;
+                case "salescount":
+                case "sales_count":
+                    sortedProducts.sort((p1, p2) -> {
+                        int cmp = Integer.compare(
+                            p1.getSalesCount() != null ? p1.getSalesCount() : 0,
+                            p2.getSalesCount() != null ? p2.getSalesCount() : 0
+                        );
+                        return direction == Sort.Direction.ASC ? cmp : -cmp;
+                    });
+                    break;
+                case "rate":
+                    sortedProducts.sort((p1, p2) -> {
+                        int cmp = Float.compare(
+                            p1.getRate() != null ? p1.getRate() : 0f,
+                            p2.getRate() != null ? p2.getRate() : 0f
+                        );
+                        return direction == Sort.Direction.ASC ? cmp : -cmp;
+                    });
+                    break;
+            }
+        }
+
+        // 手动分页
+        int total = sortedProducts.size();
+        int start = page * pageSize;
+        int end = Math.min(start + pageSize, total);
+        List<Product> pagedProducts = start < total ? sortedProducts.subList(start, end) : java.util.Collections.emptyList();
+
+        // 转换为VO列表
+        List<ProductVO> productVOs = pagedProducts.stream()
+            .map(Product::toVO)
+            .collect(Collectors.toList());
+
+        // 构建搜索结果
+        return new SearchResultVO(
+            productVOs,
+            (long) total,
+            page,
+            pageSize
+        );
+    }
+
+    /**
+     * 计算商品的相关性分数
+     * 标题匹配权重更高，描述匹配权重较低
+     */
+    private int calculateRelevanceScore(String title, String description, String[] keywords) {
+        int score = 0;
+        for (String keyword : keywords) {
+            String lowerKeyword = keyword.toLowerCase();
+            // 标题匹配：权重10
+            if (title.contains(lowerKeyword)) {
+                score += 10;
+                // 标题开头匹配：额外权重5
+                if (title.startsWith(lowerKeyword)) {
+                    score += 5;
+                }
+            }
+            // 描述匹配：权重3
+            if (description.contains(lowerKeyword)) {
+                score += 3;
+            }
+        }
+        return score;
     }
 }
