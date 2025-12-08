@@ -9,6 +9,7 @@ import lombok.Setter;
 import javax.persistence.*;
 import javax.validation.constraints.NotBlank;
 import javax.validation.constraints.NotNull;
+import java.util.Date;
 
 
 @NoArgsConstructor
@@ -27,6 +28,9 @@ public class BookComment {
     @Column(name = "comment_text")
     private String comment_text;
 
+    @Column(name = "user_id")
+    private Integer userId;
+
     @JoinColumn(name = "product_id", nullable = false)
     @NotNull
     private Integer productId;
@@ -35,7 +39,10 @@ public class BookComment {
     @NotBlank
     private String name;
 
+    @Column(name = "create_time")
+    private Date createTime;
+
     public BookCommentVO toVO(){
-        return new BookCommentVO(id,comment_text,productId,name);
+        return new BookCommentVO(id,comment_text,productId,name,userId,createTime);
     }
 }

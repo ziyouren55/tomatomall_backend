@@ -13,17 +13,22 @@ public class BookCommentController {
     @Autowired
     BookCommentService bookCommentService;
     @PostMapping("/{productId}")
-    public Response addBookComment(@PathVariable("productId") Integer productId, @RequestBody BookCommentVO bookCommentVO){
-        return Response.buildSuccess(bookCommentService.addBookComment(productId, bookCommentVO));
+    public Response<String> addBookComment(@PathVariable("productId") Integer productId,
+                                   @RequestAttribute(value = "userId", required = false) Integer userId,
+                                   @RequestBody BookCommentVO bookCommentVO){
+        return Response.buildSuccess(bookCommentService.addBookComment(productId, userId, bookCommentVO));
     }
 
     @GetMapping("/{productId}")
-    public Response getBookComment(@PathVariable("productId") Integer productId){
-        return Response.buildSuccess(bookCommentService.getBookComment(productId));
+    public Response<?> getBookComment(@PathVariable("productId") Integer productId,
+                                   @RequestParam(defaultValue = "0") int page,
+                                   @RequestParam(defaultValue = "10") int size){
+        return Response.buildSuccess(bookCommentService.getBookComment(productId, page, size));
     }
 
     @DeleteMapping("/{id}")
-    public Response deleteBookComment(@PathVariable("Id") Integer id){
-        return Response.buildSuccess(bookCommentService.deleteBookComment(id));
+    public Response<String> deleteBookComment(@PathVariable("id") Integer id,
+                                      @RequestAttribute(value = "userId", required = false) Integer userId){
+        return Response.buildSuccess(bookCommentService.deleteBookComment(id, userId));
     }
 }

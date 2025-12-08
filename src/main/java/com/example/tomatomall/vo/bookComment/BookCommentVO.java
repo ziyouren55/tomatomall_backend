@@ -5,6 +5,7 @@ import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
+import java.util.Date;
 
 @Getter
 @Setter
@@ -15,9 +16,18 @@ public class BookCommentVO {
     private String commentText;
     private Integer productId;
     private String name;
+    private Integer userId;
+    private Date createTime;
 
 
     public BookComment toPO(){
-        return new BookComment(id,commentText,productId,name);
+        BookComment comment = new BookComment();
+        comment.setId(id);
+        comment.setComment_text(commentText);
+        comment.setProductId(productId);
+        comment.setName(name);
+        comment.setUserId(userId);
+        comment.setCreateTime(createTime);
+        return comment;
     }
 }

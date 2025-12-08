@@ -2,13 +2,13 @@ package com.example.tomatomall.service;
 
 import com.example.tomatomall.vo.bookComment.BookCommentVO;
 
-import java.util.Set;
+import org.springframework.data.domain.Page;
 
 public interface BookCommentService {
 
-    String addBookComment(Integer productId, BookCommentVO bookCommentVO);
+    String addBookComment(Integer productId, Integer userId, BookCommentVO bookCommentVO);
 
-    Set<BookCommentVO> getBookComment(Integer productId);
+    Page<BookCommentVO> getBookComment(Integer productId, int page, int size);
 
-    String deleteBookComment(Integer Id);
+    String deleteBookComment(Integer Id, Integer userId);
 }
