@@ -13,6 +13,7 @@ public interface MemberService {
     MemberLevelVO getMemberLevelByUserId(Integer userId);
     MemberLevelVO createMemberLevel(MemberLevelVO levelVO);
     MemberLevelVO updateMemberLevel(Integer levelId, MemberLevelVO levelVO);
+    void deleteMemberLevel(Integer levelId);
 
     // 会员积分相关
     MemberPointsVO getUserPoints(Integer userId);
@@ -22,4 +23,7 @@ public interface MemberService {
     // 会员升级相关
     boolean checkAndUpgradeMemberLevel(Integer userId);
     MemberLevelVO upgradeMemberLevel(Integer userId, Integer targetLevelId);
+
+    // 兼容修复：为缺失等级的会员补全最低等级与积分
+    MemberLevelVO repairMemberLevel(Integer userId);
 }

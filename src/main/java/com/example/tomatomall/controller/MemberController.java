@@ -1,9 +1,12 @@
 package com.example.tomatomall.controller;
 
+import com.example.tomatomall.exception.TomatoMallException;
 import com.example.tomatomall.service.MemberService;
 import com.example.tomatomall.vo.Response;
 import com.example.tomatomall.vo.member.MemberLevelVO;
 import com.example.tomatomall.vo.member.MemberPointsVO;
+import com.example.tomatomall.repository.AccountRepository;
+import com.example.tomatomall.po.Account;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.*;
 
@@ -16,15 +19,46 @@ public class MemberController {
     @Autowired
     private MemberService memberService;
 
+    @Autowired
+    private AccountRepository accountRepository;
+
     /**
      * 获取用户会员信息
      */
     @GetMapping("/info")
     public Response getMemberInfo(@RequestAttribute("userId") Integer userId) {
-        MemberPointsVO pointsInfo = memberService.getUserPoints(userId);
-        MemberLevelVO levelInfo = memberService.getMemberLevelByUserId(userId);
+        Account account = accountRepository.findById(userId).orElse(null);
 
         Map<String, Object> result = new HashMap<>();
+        if (account == null) {
+            return Response.buildFailure("404", "用户不存在");
+        }
+
+        boolean isMember = Boolean.TRUE.equals(account.getIsMember());
+        result.put("isMember", isMember);
+        result.put("memberLevelId", account.getMemberLevelId());
+
+        if (!isMember) {
+            // 非会员仅返回状态即可
+            return Response.buildSuccess(result);
+        }
+
+        MemberPointsVO pointsInfo = null;
+        MemberLevelVO levelInfo = null;
+        try {
+            pointsInfo = memberService.getUserPoints(userId);
+            levelInfo = memberService.getMemberLevelByUserId(userId);
+        } catch (TomatoMallException e) {
+            // 如果等级缺失，尝试自动修复为默认等级
+            memberService.repairMemberLevel(userId);
+            try {
+                pointsInfo = memberService.getUserPoints(userId);
+                levelInfo = memberService.getMemberLevelByUserId(userId);
+            } catch (Exception ignore) {
+                // 仍失败则保持为空，交由前端兜底提示
+            }
+        }
+
         result.put("points", pointsInfo);
         result.put("level", levelInfo);
 
@@ -61,5 +95,13 @@ public class MemberController {
     @GetMapping("/points/history")
     public Response getPointsHistory(@RequestAttribute("userId") Integer userId) {
         return Response.buildSuccess(memberService.getUserPointsHistory(userId));
+    }
+
+    /**
+     * 兼容旧数据：若会员缺少等级/积分，补全为一级会员
+     */
+    @PostMapping("/repair")
+    public Response repairMember(@RequestAttribute("userId") Integer userId) {
+        return Response.buildSuccess(memberService.repairMemberLevel(userId));
     }
 }

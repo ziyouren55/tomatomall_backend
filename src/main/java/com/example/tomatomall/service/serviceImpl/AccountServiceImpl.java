@@ -3,8 +3,10 @@ package com.example.tomatomall.service.serviceImpl;
 import com.example.tomatomall.enums.UserRole;
 import com.example.tomatomall.exception.TomatoMallException;
 import com.example.tomatomall.po.Account;
+import com.example.tomatomall.po.MemberPoints;
 import com.example.tomatomall.repository.AccountRepository;
 import com.example.tomatomall.repository.CartRepository;
+import com.example.tomatomall.repository.MemberPointsRepository;
 import com.example.tomatomall.service.AccountService;
 import com.example.tomatomall.util.MyBeanUtil;
 import com.example.tomatomall.util.TokenUtil;
@@ -32,6 +34,9 @@ public class AccountServiceImpl implements AccountService {
     @Autowired
     CartRepository cartRepository;
 
+    @Autowired
+    MemberPointsRepository memberPointsRepository;
+
     @Override
     public String register(AccountVO accountVO)
     {
@@ -56,7 +61,21 @@ public class AccountServiceImpl implements AccountService {
         Account newAccount = accountVO.toPO();
         newAccount.setCreateTime(new Date());
         newAccount.setPassword(encodedPassword);
+
+        // 保证注册用户默认成为会员且绑定最低等级
+        if (newAccount.getMemberLevelId() == null) {
+            newAccount.setMemberLevelId(1);
+        }
+        newAccount.setIsMember(true);
         accountRepository.save(newAccount);
+
+        // 初始化会员积分记录（确保当前等级为最低等级）
+        MemberPoints points = new MemberPoints();
+        points.setUserId(newAccount.getId());
+        points.setCurrentLevelId(newAccount.getMemberLevelId());
+        points.setCreateTime(new Date());
+        points.setUpdateTime(new Date());
+        memberPointsRepository.save(points);
 
         return "注册成功";
     }

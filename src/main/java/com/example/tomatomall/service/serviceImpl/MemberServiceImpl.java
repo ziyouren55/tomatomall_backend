@@ -38,6 +38,9 @@ public class MemberServiceImpl implements MemberService
     @Autowired
     private AccountRepository accountRepository;
 
+    // 默认的会员等级编号（member_level 字段）
+    private static final Integer DEFAULT_LEVEL_CODE = 1;
+
     // 获取所有会员等级
     @Override
     public List<MemberLevelVO> getAllMemberLevels() {
@@ -48,8 +51,7 @@ public class MemberServiceImpl implements MemberService
     // 根据ID获取会员等级
     @Override
     public MemberLevelVO getMemberLevelById(Integer levelId) {
-        MemberLevel level = memberLevelRepository.findByMemberLevel(levelId)
-            .orElseThrow(() -> new TomatoMallException("会员等级不存在"));
+        MemberLevel level = fetchLevelByCodeOrId(levelId);
         return convertToVO(level);
     }
 
@@ -62,8 +64,9 @@ public class MemberServiceImpl implements MemberService
             throw new TomatoMallException("用户不存在");
         }
 
-        Integer levelId = account.get().getMemberLevelId();
-        return getMemberLevelById(levelId);
+        Integer levelCode = account.get().getMemberLevelId();
+        MemberLevel level = fetchLevelByCodeOrId(levelCode);
+        return convertToVO(level);
     }
 
     // 创建会员等级
@@ -95,6 +98,73 @@ public class MemberServiceImpl implements MemberService
         memberLevelRepository.save(level);
 
         return convertToVO(level);
+    }
+
+    @Override
+    public MemberLevelVO repairMemberLevel(Integer userId) {
+        Account account = accountRepository.findById(userId)
+            .orElseThrow(() -> new TomatoMallException("用户不存在"));
+
+        // 默认等级记录
+        MemberLevel defaultLevel = fetchLevelByCodeOrId(DEFAULT_LEVEL_CODE);
+
+        // 1. 补全账号的会员等级与标志
+        if (account.getMemberLevelId() == null || account.getMemberLevelId() <= 0) {
+            account.setMemberLevelId(defaultLevel.getMemberLevel());
+        }
+        account.setIsMember(true);
+        accountRepository.save(account);
+
+        // 2. 补全积分记录
+        MemberPoints points = memberPointsRepository.findByUserId(userId)
+            .orElseGet(() -> {
+                MemberPoints newPoints = new MemberPoints();
+                newPoints.setUserId(userId);
+                newPoints.setCreateTime(new Date());
+                newPoints.setUpdateTime(new Date());
+                newPoints.setCurrentPoints(0);
+                newPoints.setTotalPoints(0);
+                newPoints.setCurrentLevelId(defaultLevel.getMemberLevel());
+                return newPoints;
+            });
+
+        if (points.getCurrentLevelId() == null || points.getCurrentLevelId() <= 0) {
+            points.setCurrentLevelId(defaultLevel.getMemberLevel());
+        }
+        points.setUpdateTime(new Date());
+        memberPointsRepository.save(points);
+
+        return convertToVO(defaultLevel);
+    }
+
+    // 根据 member_level（优先）或主键ID 获取等级
+    private MemberLevel fetchLevelByCodeOrId(Integer codeOrId) {
+        if (codeOrId == null) {
+            throw new TomatoMallException("会员等级不存在");
+        }
+        return memberLevelRepository.findByMemberLevel(codeOrId)
+            .orElseGet(() -> memberLevelRepository.findById(codeOrId)
+                .orElseThrow(() -> new TomatoMallException("会员等级不存在")));
+    }
+
+    // 删除会员等级（确保未被使用）
+    @Override
+    public void deleteMemberLevel(Integer levelId) {
+        MemberLevel level = memberLevelRepository.findById(levelId)
+            .orElseThrow(() -> new TomatoMallException("会员等级不存在"));
+
+        // 默认最低等级不允许删除
+        if (level.getMemberLevel() != null && level.getMemberLevel() == 1) {
+            throw new TomatoMallException("默认等级不可删除");
+        }
+
+        long accountCount = accountRepository.countByMemberLevelId(levelId);
+        long pointsCount = memberPointsRepository.countByCurrentLevelId(levelId);
+        if (accountCount > 0 || pointsCount > 0) {
+            throw new TomatoMallException("有用户正在使用该等级，无法删除");
+        }
+
+        memberLevelRepository.delete(level);
     }
 
     // 获取用户积分信息
@@ -166,9 +236,9 @@ public class MemberServiceImpl implements MemberService
         Optional<MemberLevel> eligibleLevel = memberLevelRepository
             .findFirstByPointsRequiredLessThanEqualOrderByPointsRequiredDesc(memberPoints.getTotalPoints());
 
-        if (eligibleLevel.isPresent() && !eligibleLevel.get().getId().equals(memberPoints.getCurrentLevelId())) {
+        if (eligibleLevel.isPresent() && !eligibleLevel.get().getMemberLevel().equals(memberPoints.getCurrentLevelId())) {
             // 升级会员等级
-            memberPoints.setCurrentLevelId(eligibleLevel.get().getId());
+            memberPoints.setCurrentLevelId(eligibleLevel.get().getMemberLevel());
             memberPoints.setUpdateTime(new Date());
             memberPointsRepository.save(memberPoints);
 
@@ -176,7 +246,7 @@ public class MemberServiceImpl implements MemberService
             Optional<Account> account = accountRepository.findById(userId);
             if (account.isPresent()) {
                 Account user = account.get();
-                user.setMemberLevelId(eligibleLevel.get().getId());
+                user.setMemberLevelId(eligibleLevel.get().getMemberLevel());
                 user.setIsMember(true);
                 accountRepository.save(user);
             }
@@ -206,7 +276,7 @@ public class MemberServiceImpl implements MemberService
         // 更新用户会员状态
         Account account = accountRepository.findById(userId)
             .orElseThrow(() -> new TomatoMallException("用户不存在"));
-        account.setMemberLevelId(targetLevelId);
+        account.setMemberLevelId(targetLevel.getMemberLevel());
         account.setIsMember(true);
         accountRepository.save(account);
 
@@ -218,7 +288,7 @@ public class MemberServiceImpl implements MemberService
                 newPoints.setCreateTime(new Date());
                 return newPoints;
             });
-        memberPoints.setCurrentLevelId(targetLevelId);
+        memberPoints.setCurrentLevelId(targetLevel.getMemberLevel());
         memberPoints.setUpdateTime(new Date());
         memberPointsRepository.save(memberPoints);
 

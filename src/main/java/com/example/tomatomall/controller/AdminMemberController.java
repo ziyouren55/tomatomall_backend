@@ -54,6 +54,15 @@ public class AdminMemberController {
     }
 
     /**
+     * 删除会员等级
+     */
+    @DeleteMapping("/levels/{levelId}")
+    public Response deleteLevel(@PathVariable Integer levelId) {
+        memberService.deleteMemberLevel(levelId);
+        return Response.buildSuccess("删除成功");
+    }
+
+    /**
      * 查看用户积分记录
      */
     @GetMapping("/points/{userId}")
