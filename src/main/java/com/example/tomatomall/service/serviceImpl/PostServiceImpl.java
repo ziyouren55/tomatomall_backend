@@ -5,7 +5,6 @@ import com.example.tomatomall.po.*;
 import com.example.tomatomall.repository.*;
 import com.example.tomatomall.service.ForumPointsService;
 import com.example.tomatomall.service.PostService;
-import com.example.tomatomall.util.OssUtil;
 import com.example.tomatomall.vo.post.*;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
@@ -16,7 +15,6 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.Date;
-import java.util.List;
 import java.util.Optional;
 
 @Service
@@ -35,7 +33,7 @@ public class PostServiceImpl implements PostService {
     private ForumPointsService forumPointsService;
 
     @Autowired
-    private OssUtil ossUtil;
+    private PostLikeRepository postLikeRepository;
 
     @Override
     @Transactional
@@ -113,8 +111,12 @@ public class PostServiceImpl implements PostService {
 
 
         // 设置当前用户是否点赞
-        // 实际项目中应该有一个用户点赞记录表来判断
-        result.setIsLiked(false);
+        if (userId != null) {
+            boolean liked = postLikeRepository.existsByPostIdAndUserId(postId, userId);
+            result.setIsLiked(liked);
+        } else {
+            result.setIsLiked(false);
+        }
 
         return result;
     }
@@ -180,12 +182,31 @@ public class PostServiceImpl implements PostService {
         Post post = postRepository.findById(postId)
                 .orElseThrow(() -> new TomatoMallException("帖子不存在"));
 
-        // 检查用户是否已点赞（实际项目中应该有专门的点赞记录表）
-        // 这里简化处理，直接增加点赞数
+        // 如果已点赞，则取消点赞
+        Optional<PostLike> likeOpt = postLikeRepository.findByPostIdAndUserId(postId, userId);
+        if (likeOpt.isPresent()) {
+            postLikeRepository.delete(likeOpt.get());
+            post.setLikeCount(Math.max(0, post.getLikeCount() - 1));
+            post.setUpdateTime(new Date());
+            postRepository.save(post);
+            PostVO vo = getPostById(postId, userId);
+            vo.setIsLiked(false);
+            return vo;
+        }
+
+        // 未点赞则点赞
+        PostLike like = new PostLike();
+        like.setPostId(postId);
+        like.setUserId(userId);
+        like.setCreateTime(new Date());
+        postLikeRepository.save(like);
+
         post.setLikeCount(post.getLikeCount() + 1);
         post.setUpdateTime(new Date());
+        postRepository.save(post);
 
-        Post updatedPost = postRepository.save(post);
-        return getPostById(updatedPost.getId(), userId);
+        PostVO vo = getPostById(postId, userId);
+        vo.setIsLiked(true);
+        return vo;
     }
 }

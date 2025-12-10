@@ -4,8 +4,10 @@ import com.example.tomatomall.exception.TomatoMallException;
 import com.example.tomatomall.po.Account;
 import com.example.tomatomall.po.Post;
 import com.example.tomatomall.po.Reply;
+import com.example.tomatomall.po.ReplyLike;
 import com.example.tomatomall.repository.AccountRepository;
 import com.example.tomatomall.repository.PostRepository;
+import com.example.tomatomall.repository.ReplyLikeRepository;
 import com.example.tomatomall.repository.ReplyRepository;
 import com.example.tomatomall.service.ForumPointsService;
 import com.example.tomatomall.service.ReplyService;
@@ -37,6 +39,9 @@ public class ReplyServiceImpl implements ReplyService {
 
     @Autowired
     private ForumPointsService forumPointsService;
+
+    @Autowired
+    private ReplyLikeRepository replyLikeRepository;
 
     @Override
     @Transactional
@@ -176,6 +181,7 @@ public class ReplyServiceImpl implements ReplyService {
                 vo.setChildReplies(childReplyVOs);
             }
 
+            vo.setIsLiked(false);
             return vo;
         });
     }
@@ -186,8 +192,35 @@ public class ReplyServiceImpl implements ReplyService {
         Reply reply = replyRepository.findById(replyId)
                 .orElseThrow(() -> new TomatoMallException("回复不存在"));
 
-        // 检查用户是否已点赞（实际项目中应该有专门的点赞记录表）
-        // 这里简化处理，直接增加点赞数
+        // 如果已点赞则取消
+        Optional<ReplyLike> likeOpt = replyLikeRepository.findByReplyIdAndUserId(replyId, userId);
+        if (likeOpt.isPresent()) {
+            replyLikeRepository.delete(likeOpt.get());
+            reply.setLikeCount(Math.max(0, reply.getLikeCount() - 1));
+            reply.setUpdateTime(new Date());
+            Reply updated = replyRepository.save(reply);
+
+            ReplyVO vo = updated.toVO();
+            accountRepository.findById(updated.getUserId()).ifPresent(user -> {
+                vo.setUsername(user.getUsername());
+                vo.setUserAvatar(user.getAvatar());
+            });
+            if (updated.getParentId() != null) {
+                replyRepository.findById(updated.getParentId()).ifPresent(parent -> {
+                    accountRepository.findById(parent.getUserId()).ifPresent(parentUser -> vo.setParentUsername(parentUser.getUsername()));
+                });
+            }
+            vo.setIsLiked(false);
+            return vo;
+        }
+
+        // 未点赞则点赞
+        ReplyLike like = new ReplyLike();
+        like.setReplyId(replyId);
+        like.setUserId(userId);
+        like.setCreateTime(new Date());
+        replyLikeRepository.save(like);
+
         reply.setLikeCount(reply.getLikeCount() + 1);
         reply.setUpdateTime(new Date());
 
