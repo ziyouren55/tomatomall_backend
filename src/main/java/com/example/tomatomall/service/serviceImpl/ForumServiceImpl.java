@@ -27,6 +27,17 @@ public class ForumServiceImpl implements ForumService {
 
     private Integer salesThreshold = 100;
 
+    private ForumVO buildForumVO(Forum forum) {
+        Product product = productRepository.findById(forum.getBookId()).orElse(null);
+        if (product == null) {
+            return null;
+        }
+        ForumVO forumVO = forum.toVO();
+        forumVO.setBookTitle(product.getTitle());
+        forumVO.setBookCover(product.getCover());
+        return forumVO;
+    }
+
     @Override
     @Transactional
     public ForumVO createBookForum(Integer bookId) {
@@ -93,25 +104,23 @@ public class ForumServiceImpl implements ForumService {
 
     @Override
     public List<ForumVO> getActiveForums(int page, int size) {
-        PageRequest pageRequest = PageRequest.of(page, size, Sort.by(Sort.Direction.DESC, "postCount"));
-        List<Forum> forums = forumRepository.findByStatus("ACTIVE");
-
+        PageRequest pageRequest = PageRequest.of(page, size, Sort.by(Sort.Direction.DESC, "postCount", "updateTime"));
         List<ForumVO> result = new ArrayList<>();
-        for (Forum forum : forums) {
-            try {
-                Product product = productRepository.findById(forum.getBookId()).orElse(null);
-                if (product != null) {
-                    ForumVO forumVO = forum.toVO();
-                    forumVO.setBookTitle(product.getTitle());
-                    forumVO.setBookCover(product.getCover());
+        forumRepository.findByStatusAndPostCountGreaterThan("ACTIVE", 0, pageRequest).forEach(forum -> {
+            ForumVO forumVO = buildForumVO(forum);
+            if (forumVO != null) {
+                result.add(forumVO);
+            }
+        });
+        // 如果热门为空，退回到所有 ACTIVE
+        if (result.isEmpty()) {
+            forumRepository.findByStatus("ACTIVE", pageRequest).forEach(forum -> {
+                ForumVO forumVO = buildForumVO(forum);
+                if (forumVO != null) {
                     result.add(forumVO);
                 }
-            } catch (Exception e) {
-                // 如果获取书籍信息失败，继续处理下一个论坛
-                continue;
-            }
+            });
         }
-
         return result;
     }
 
@@ -121,21 +130,49 @@ public class ForumServiceImpl implements ForumService {
         List<Forum> forums = forumRepository.findAll();
         List<ForumVO> result = new ArrayList<>();
         for (Forum forum : forums) {
-            try {
-                Product product = productRepository.findById(forum.getBookId()).orElse(null);
-                if (product != null) {
-                    ForumVO forumVO = forum.toVO();
-                    forumVO.setBookTitle(product.getTitle());
-                    forumVO.setBookCover(product.getCover());
-                    result.add(forumVO);
-                }
-            } catch (Exception e) {
-                // 如果获取书籍信息失败，继续处理下一个论坛
-                continue;
+            ForumVO forumVO = buildForumVO(forum);
+            if (forumVO != null) {
+                result.add(forumVO);
             }
         }
 
         return result;
+    }
+
+    @Override
+    public org.springframework.data.domain.Page<ForumVO> getActiveForumsPage(int page, int size) {
+        PageRequest pageRequest = PageRequest.of(page, size, Sort.by(Sort.Direction.DESC, "postCount", "updateTime"));
+        org.springframework.data.domain.Page<ForumVO> pageData =
+                forumRepository.findByStatusAndPostCountGreaterThan("ACTIVE", 0, pageRequest)
+                        .map(this::buildForumVO)
+                        .map(vo -> vo);
+        if (pageData.getTotalElements() == 0) {
+            // 回退：如果暂无发帖的论坛，使用全部 ACTIVE
+            return forumRepository.findByStatus("ACTIVE", pageRequest)
+                    .map(this::buildForumVO)
+                    .map(vo -> vo);
+        }
+        return pageData;
+    }
+
+    @Override
+    public org.springframework.data.domain.Page<ForumVO> getForumsPage(int page, int size) {
+        PageRequest pageRequest = PageRequest.of(page, size, Sort.by(Sort.Direction.DESC, "updateTime"));
+        return forumRepository.findAll(pageRequest)
+                .map(this::buildForumVO)
+                .map(vo -> vo);
+    }
+
+    @Override
+    public org.springframework.data.domain.Page<ForumVO> searchForums(String keyword, String status, int page, int size) {
+        PageRequest pageRequest = PageRequest.of(page, size, Sort.by(Sort.Direction.DESC, "updateTime"));
+        org.springframework.data.domain.Page<Forum> forums;
+        if (status != null && !status.isEmpty()) {
+            forums = forumRepository.findByNameContainingIgnoreCaseAndStatus(keyword, status, pageRequest);
+        } else {
+            forums = forumRepository.findByNameContainingIgnoreCase(keyword, pageRequest);
+        }
+        return forums.map(this::buildForumVO).map(vo -> vo);
     }
 
     /**
@@ -158,6 +195,25 @@ public class ForumServiceImpl implements ForumService {
     @Override
     public boolean incrementSalesAndCheckForum(Integer bookId, Integer incrementCount)
     {
+        Product product = productRepository.findById(bookId)
+                .orElseThrow(() -> new TomatoMallException("书籍不存在"));
+
+        // 更新销量
+        int originSales = product.getSalesCount() == null ? 0 : product.getSalesCount();
+        product.setSalesCount(originSales + (incrementCount == null ? 0 : incrementCount));
+        productRepository.save(product);
+
+        // 如果已存在论坛则直接返回
+        Optional<Forum> existingForum = forumRepository.findByBookId(bookId);
+        if (existingForum.isPresent()) {
+            return false;
+        }
+
+        // 达到阈值自动创建论坛
+        if (product.getSalesCount() != null && product.getSalesCount() >= salesThreshold) {
+            createBookForum(bookId);
+            return true;
+        }
         return false;
     }
 }

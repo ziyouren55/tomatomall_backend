@@ -19,6 +19,15 @@ public interface ForumService {
 
     List<ForumVO> getAllForums();
 
+    // 分页获取活跃论坛
+    org.springframework.data.domain.Page<ForumVO> getActiveForumsPage(int page, int size);
+
+    // 分页获取全部论坛
+    org.springframework.data.domain.Page<ForumVO> getForumsPage(int page, int size);
+
+    // 按名称搜索（可选状态过滤）分页
+    org.springframework.data.domain.Page<ForumVO> searchForums(String keyword, String status, int page, int size);
+
 
     /**
      * 检测热门书籍并为其创建论坛
