@@ -10,6 +10,7 @@ import com.example.tomatomall.vo.coupon.UserCouponVO;
 import org.springframework.beans.BeanUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
 import java.util.Date;
@@ -34,6 +35,9 @@ public class CouponServiceImpl implements CouponService
 
     @Autowired
     private OrderRepository orderRepository;
+
+    @Autowired
+    private AccountRepository accountRepository;
 
     // 获取所有优惠券
     @Override
@@ -82,7 +86,7 @@ public class CouponServiceImpl implements CouponService
     // 获取用户优惠券
     @Override
     public List<UserCouponVO> getUserCoupons(Integer userId) {
-        List<UserCoupon> userCoupons = userCouponRepository.findByUserIdAndIsUsedFalse(userId);
+        List<UserCoupon> userCoupons = userCouponRepository.findByUserId(userId);
         return userCoupons.stream().map(this::convertToVO).collect(Collectors.toList());
     }
 
@@ -131,13 +135,51 @@ public class CouponServiceImpl implements CouponService
         return convertToVO(userCoupon);
     }
 
+    @Override
+    public UserCouponVO claimCoupon(Integer userId, Integer couponId) {
+        Coupon coupon = couponRepository.findById(couponId)
+            .orElseThrow(() -> new TomatoMallException("优惠券不存在"));
+
+        Date now = new Date();
+        if (!Boolean.TRUE.equals(coupon.getIsActive()) || coupon.getValidFrom().after(now) || coupon.getValidTo().before(now)) {
+            throw new TomatoMallException("优惠券未生效或已过期");
+        }
+
+        if (coupon.getPointsRequired() != null && coupon.getPointsRequired() > 0) {
+            throw new TomatoMallException("该优惠券需要积分兑换，请使用兑换入口");
+        }
+
+        UserCoupon userCoupon = new UserCoupon();
+        userCoupon.setUserId(userId);
+        userCoupon.setCouponId(couponId);
+        userCoupon.setCreateTime(new Date());
+        userCouponRepository.save(userCoupon);
+
+        return convertToVO(userCoupon);
+    }
+
     // 应用优惠券到订单
     @Override
-    public boolean applyCouponToOrder(Integer userId, Integer couponId, Integer orderId) {
+    @Transactional
+    public boolean applyCouponToOrder(Integer userId, Integer userCouponId, Integer couponId, Integer orderId) {
         // 1. 检查用户优惠券是否存在且未使用
-        Optional<UserCoupon> userCouponOpt = userCouponRepository.findFirstByUserIdAndCouponIdAndIsUsedFalse(userId, couponId);
-        if (!userCouponOpt.isPresent()) {
-            throw new TomatoMallException("无效的优惠券或优惠券已使用");
+        UserCoupon userCoupon;
+        if (userCouponId != null) {
+            userCoupon = userCouponRepository.findById(userCouponId)
+                .orElseThrow(() -> new TomatoMallException("无效的用户优惠券"));
+            if (!userCoupon.getUserId().equals(userId)) {
+                throw new TomatoMallException("无权使用该优惠券");
+            }
+            if (Boolean.TRUE.equals(userCoupon.getIsUsed())) {
+                throw new TomatoMallException("优惠券已被使用");
+            }
+            couponId = userCoupon.getCouponId();
+        } else {
+            Optional<UserCoupon> userCouponOpt = userCouponRepository.findFirstByUserIdAndCouponIdAndIsUsedFalse(userId, couponId);
+            if (!userCouponOpt.isPresent()) {
+                throw new TomatoMallException("无效的优惠券或优惠券已使用");
+            }
+            userCoupon = userCouponOpt.get();
         }
 
         // 2. 检查订单是否存在
@@ -157,6 +199,21 @@ public class CouponServiceImpl implements CouponService
         // 5. 获取优惠券详情
         Coupon coupon = couponRepository.findById(couponId)
             .orElseThrow(() -> new TomatoMallException("优惠券不存在"));
+
+        Date now = new Date();
+        if (!Boolean.TRUE.equals(coupon.getIsActive())) {
+            throw new TomatoMallException("优惠券未生效");
+        }
+
+        if(coupon.getValidFrom().after(now))
+        {
+            throw new TomatoMallException("优惠券未到达指定时间");
+        }
+
+        if(coupon.getValidTo().before(now))
+        {
+            throw new TomatoMallException("优惠券已过期");
+        }
 
         // 6. 验证优惠券是否满足最低消费
         if (coupon.getMinimumPurchase() != null &&
@@ -183,10 +240,35 @@ public class CouponServiceImpl implements CouponService
         orderRepository.save(order);
 
         // 8. 更新优惠券状态为已使用
-        UserCoupon userCoupon = userCouponOpt.get();
         userCoupon.setIsUsed(true);
         userCoupon.setUsedTime(new Date());
         userCoupon.setOrderId(orderId);
+        userCouponRepository.save(userCoupon);
+
+        return true;
+    }
+
+    @Override
+    @Transactional
+    public boolean releaseCoupon(Integer userId, Integer userCouponId, Integer orderId) {
+        UserCoupon userCoupon = userCouponRepository.findById(userCouponId)
+            .orElseThrow(() -> new TomatoMallException("用户优惠券不存在"));
+
+        if (!userCoupon.getUserId().equals(userId)) {
+            throw new TomatoMallException("无权操作此优惠券");
+        }
+
+        if (!Boolean.TRUE.equals(userCoupon.getIsUsed())) {
+            return true;
+        }
+
+        if (userCoupon.getOrderId() != null && orderId != null && !userCoupon.getOrderId().equals(orderId)) {
+            throw new TomatoMallException("订单信息不匹配，无法释放优惠券");
+        }
+
+        userCoupon.setIsUsed(false);
+        userCoupon.setOrderId(null);
+        userCoupon.setUsedTime(null);
         userCouponRepository.save(userCoupon);
 
         return true;
@@ -203,7 +285,7 @@ public class CouponServiceImpl implements CouponService
     @Override
     public UserCouponVO issueCouponToUser(Integer couponId, Integer userId, String remark) {
         // 1. 检查优惠券是否存在
-        Coupon coupon = couponRepository.findById(couponId)
+        couponRepository.findById(couponId)
             .orElseThrow(() -> new TomatoMallException("优惠券不存在"));
 
         // 2. 创建用户优惠券记录（无需扣减积分）
@@ -217,6 +299,52 @@ public class CouponServiceImpl implements CouponService
         // ...
 
         return convertToVO(userCoupon);
+    }
+
+    @Override
+    @Transactional
+    public Integer issueCouponToAllUsers(Integer couponId, String remark) {
+        Coupon coupon = couponRepository.findById(couponId)
+            .orElseThrow(() -> new TomatoMallException("优惠券不存在"));
+
+        // 校验券是否可发
+        Date now = new Date();
+        System.out.println(now);
+        if (!Boolean.TRUE.equals(coupon.getIsActive())) {
+            throw new TomatoMallException("优惠券未生效");
+        }
+
+        if(coupon.getValidFrom().after(now))
+        {
+            throw new TomatoMallException("优惠券未到达指定时间");
+        }
+
+        if(coupon.getValidTo().before(now))
+        {
+            throw new TomatoMallException("优惠券已过期");
+        }
+
+        // 拉取所有普通用户（排除管理员）
+        List<Account> accounts = accountRepository.findAll()
+            .stream()
+            .filter(acc -> acc.getRole() == null || !"ADMIN".equalsIgnoreCase(acc.getRole().name()))
+            .collect(Collectors.toList());
+
+        if (accounts.isEmpty()) {
+            return 0;
+        }
+
+        // 批量构建用户券
+        List<UserCoupon> batch = accounts.stream().map(acc -> {
+            UserCoupon uc = new UserCoupon();
+            uc.setUserId(acc.getId());
+            uc.setCouponId(couponId);
+            uc.setCreateTime(new Date());
+            return uc;
+        }).collect(Collectors.toList());
+
+        userCouponRepository.saveAll(batch);
+        return batch.size();
     }
 
     // 转换工具方法
@@ -238,7 +366,10 @@ public class CouponServiceImpl implements CouponService
             vo.setDiscountAmount(coupon.get().getDiscountAmount());
             vo.setDiscountPercentage(coupon.get().getDiscountPercentage());
             vo.setMinimumPurchase(coupon.get().getMinimumPurchase());
+            vo.setPointsRequired(coupon.get().getPointsRequired());
+            vo.setValidFrom(coupon.get().getValidFrom());
             vo.setValidTo(coupon.get().getValidTo());
+            vo.setIsActive(coupon.get().getIsActive());
         }
 
         return vo;

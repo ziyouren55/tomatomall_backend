@@ -3,6 +3,7 @@ package com.example.tomatomall.controller;
 import com.example.tomatomall.service.CouponService;
 import com.example.tomatomall.vo.Response;
 import com.example.tomatomall.vo.coupon.CouponIssueVO;
+import com.example.tomatomall.vo.coupon.CouponIssueAllVO;
 import com.example.tomatomall.vo.coupon.CouponVO;
 import com.example.tomatomall.vo.coupon.UserCouponVO;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -18,7 +19,7 @@ public class AdminCouponController {
      * 获取所有优惠券
      */
     @GetMapping()
-    public Response getAllCoupons() {
+    public Response<?> getAllCoupons() {
         return Response.buildSuccess(couponService.getAllCoupons());
     }
 
@@ -26,7 +27,7 @@ public class AdminCouponController {
      * 根据ID获取优惠券
      */
     @GetMapping("/{couponId}")
-    public Response getCouponById(@PathVariable Integer couponId) {
+    public Response<?> getCouponById(@PathVariable Integer couponId) {
         return Response.buildSuccess(couponService.getCouponById(couponId));
     }
 
@@ -34,7 +35,7 @@ public class AdminCouponController {
      * 创建优惠券
      */
     @PostMapping()
-    public Response createCoupon(@RequestBody CouponVO couponVO) {
+    public Response<?> createCoupon(@RequestBody CouponVO couponVO) {
         return Response.buildSuccess(couponService.createCoupon(couponVO));
     }
 
@@ -42,7 +43,7 @@ public class AdminCouponController {
      * 更新优惠券
      */
     @PutMapping("/{couponId}")
-    public Response updateCoupon(@PathVariable Integer couponId, @RequestBody CouponVO couponVO) {
+    public Response<?> updateCoupon(@PathVariable Integer couponId, @RequestBody CouponVO couponVO) {
         couponVO.setId(couponId);
         return Response.buildSuccess(couponService.updateCoupon(couponVO));
     }
@@ -51,7 +52,7 @@ public class AdminCouponController {
      * 查看用户优惠券
      */
     @GetMapping("/user/{userId}")
-    public Response getUserCoupons(@PathVariable Integer userId) {
+    public Response<?> getUserCoupons(@PathVariable Integer userId) {
         return Response.buildSuccess(couponService.getUserCoupons(userId));
     }
 
@@ -59,12 +60,21 @@ public class AdminCouponController {
      * 为用户发放优惠券（管理员操作，无需扣减积分）
      */
     @PostMapping("/issue")
-    public Response issueCouponToUser(@RequestBody CouponIssueVO issueVO) {
+    public Response<?> issueCouponToUser(@RequestBody CouponIssueVO issueVO) {
         UserCouponVO result = couponService.issueCouponToUser(
             issueVO.getCouponId(),
             issueVO.getUserId(),
             issueVO.getRemark()
         );
         return Response.buildSuccess(result);
+    }
+
+    /**
+     * 向全体用户发放优惠券（管理员操作）
+     */
+    @PostMapping("/issue/all")
+    public Response<?> issueCouponToAll(@RequestBody CouponIssueAllVO issueVO) {
+        Integer count = couponService.issueCouponToAllUsers(issueVO.getCouponId(), issueVO.getRemark());
+        return Response.buildSuccess("已向 " + count + " 位用户发放优惠券");
     }
 }

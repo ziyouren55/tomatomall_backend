@@ -16,9 +16,12 @@ public interface CouponService {
     // 用户优惠券相关
     List<UserCouponVO> getUserCoupons(Integer userId);
     UserCouponVO exchangeCoupon(Integer userId, Integer couponId);
-    boolean applyCouponToOrder(Integer userId, Integer couponId, Integer orderId);
+    UserCouponVO claimCoupon(Integer userId, Integer couponId);
+    boolean applyCouponToOrder(Integer userId, Integer userCouponId, Integer couponId, Integer orderId);
+    boolean releaseCoupon(Integer userId, Integer userCouponId, Integer orderId);
     UserCouponVO getUserCouponById(Integer userCouponId);
 
     // 新增管理员方法
     UserCouponVO issueCouponToUser(Integer couponId, Integer userId, String remark);
+    Integer issueCouponToAllUsers(Integer couponId, String remark);
 }

@@ -19,8 +19,11 @@ public class UserCouponVO {
     private BigDecimal discountAmount;
     private BigDecimal discountPercentage;
     private BigDecimal minimumPurchase;
+    private Integer pointsRequired;
     private Boolean isUsed;
     private Date usedTime;
     private Integer orderId;
+    private Date validFrom;
     private Date validTo;
+    private Boolean isActive;
 }

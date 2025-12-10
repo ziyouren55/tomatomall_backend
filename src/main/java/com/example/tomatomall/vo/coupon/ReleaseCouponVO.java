@@ -7,8 +7,8 @@ import lombok.Setter;
 @Setter
 @Getter
 @NoArgsConstructor
-public class ApplyCouponVO {
+public class ReleaseCouponVO {
     private Integer userCouponId;
-    private Integer couponId;
     private Integer orderId;
 }
+
