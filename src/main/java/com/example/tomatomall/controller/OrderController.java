@@ -50,16 +50,22 @@ public class OrderController {
 
     @PostMapping("/notify")
     public void handleAlipayNotify(HttpServletRequest request, HttpServletResponse response) throws IOException, AlipayApiException {
+        System.out.println("支付宝回调通知来了");
         try {
+            System.out.println("try");
             orderService.handleAlipayNotify(request);
             response.getWriter().print("success");
+            System.out.println("suc");
         } catch (Exception e) {
             response.getWriter().print("fail");
+            System.out.println("fail");
         }
     }
 
     @GetMapping("/returnUrl")
-    public String returnUrl() {
-        return "支付成功了";
+    public void returnUrl(HttpServletResponse response) throws IOException {
+        // RestController 默认返回字符串到 body，这里使用重定向确保浏览器跳转
+        System.out.println("return_url");
+        response.sendRedirect("/#/orders?pay=success");
     }
 }

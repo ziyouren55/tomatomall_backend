@@ -8,8 +8,8 @@ import com.example.tomatomall.repository.*;
 import com.example.tomatomall.service.ForumService;
 import com.example.tomatomall.service.OrderService;
 import com.example.tomatomall.util.AlipayUtil;
-import com.example.tomatomall.vo.shopping.CartItemVO;
 import com.example.tomatomall.vo.shopping.OrderVO;
+import com.example.tomatomall.vo.shopping.OrderItemVO;
 import com.example.tomatomall.vo.shopping.PaymentResponseVO;
 import org.springframework.beans.BeanUtils;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -70,9 +70,6 @@ public class OrderServiceImpl implements OrderService {
     CartRepository cartRepository;
 
     @Autowired
-    CartsOrdersRelationRepository cartsOrdersRelationRepository;
-
-    @Autowired
     ForumService forumService;
 
     @Autowired
@@ -80,6 +77,9 @@ public class OrderServiceImpl implements OrderService {
 
     @Autowired
     ProductRepository productRepository;
+
+    @Autowired
+    OrderItemRepository orderItemRepository;
 
     @Override
     public List<OrderVO> getAllOrders() {
@@ -150,38 +150,15 @@ public class OrderServiceImpl implements OrderService {
         orderVO.setAddress(account.get().getUsername());
         orderVO.setPhone(account.get().getTelephone());
 
-        // 获取订单关联的购物车项
-        List<Integer> cartItemIds = cartsOrdersRelationRepository.findCartItemIdsByOrderId(order.getOrderId());
-        List<CartItemVO> cartItems = new ArrayList<>();
-
-        for (Integer cartItemId : cartItemIds) {
-            Optional<Cart> cartOpt = cartRepository.findById(cartItemId);
-            if (cartOpt.isPresent()) {
-                Cart cart = cartOpt.get();
-
-                // 转换为CartItemVO
-                CartItemVO cartItemVO = new CartItemVO();
-                cartItemVO.setCartItemId(String.valueOf(cart.getCartItemId()));
-                cartItemVO.setQuantity(cart.getQuantity());
-                if (cart.getState().equals("SHOW")) {
-                    cart.setState("HIDDEN");
-                    cartRepository.save(cart);
+        // 获取订单明细（快照）
+        List<OrderItem> orderItems = orderItemRepository.findByOrderId(order.getOrderId());
+        List<OrderItemVO> itemVOs = new ArrayList<>();
+        for (OrderItem oi : orderItems) {
+            OrderItemVO vo = new OrderItemVO();
+            BeanUtils.copyProperties(oi, vo);
+            itemVOs.add(vo);
                 }
-                cartItemVO.setState(cart.getState());
-
-                // 获取商品信息
-                Optional<Product> productOpt = productRepository.findById(cart.getProductId());
-                if (productOpt.isPresent()) {
-                    Product product = productOpt.get();
-                    BeanUtils.copyProperties(product, cartItemVO);
-                    cartItemVO.setProductId(String.valueOf(product.getId()));
-                }
-
-                cartItems.add(cartItemVO);
-            }
-        }
-
-        orderVO.setCartItems(cartItems);
+        orderVO.setOrderItems(itemVOs);
         return orderVO;
     }
 
@@ -200,38 +177,15 @@ public class OrderServiceImpl implements OrderService {
         orderVO.setAddress(account.get().getUsername());
         orderVO.setPhone(account.get().getTelephone());
 
-        // 获取订单关联的购物车项
-        List<Integer> cartItemIds = cartsOrdersRelationRepository.findCartItemIdsByOrderId(orderVO.getOrderId());
-        List<CartItemVO> cartItems = new ArrayList<>();
-
-        for (Integer cartItemId : cartItemIds) {
-            Optional<Cart> cartOpt = cartRepository.findById(cartItemId);
-            if (cartOpt.isPresent()) {
-                Cart cart = cartOpt.get();
-
-                // 转换为CartItemVO
-                CartItemVO cartItemVO = new CartItemVO();
-                cartItemVO.setCartItemId(String.valueOf(cart.getCartItemId()));
-                cartItemVO.setQuantity(cart.getQuantity());
-                if (cart.getState().equals("SHOW")) {
-                    cart.setState("HIDDEN");
-                    cartRepository.save(cart);
+        // 获取订单明细（快照）
+        List<OrderItem> orderItems = orderItemRepository.findByOrderId(orderVO.getOrderId());
+        List<OrderItemVO> itemVOs = new ArrayList<>();
+        for (OrderItem oi : orderItems) {
+            OrderItemVO vo = new OrderItemVO();
+            BeanUtils.copyProperties(oi, vo);
+            itemVOs.add(vo);
                 }
-                cartItemVO.setState(cart.getState());
-
-                // 获取商品信息
-                Optional<Product> productOpt = productRepository.findById(cart.getProductId());
-                if (productOpt.isPresent()) {
-                    Product product = productOpt.get();
-                    BeanUtils.copyProperties(product, cartItemVO);
-                    cartItemVO.setProductId(String.valueOf(product.getId()));
-                }
-
-                cartItems.add(cartItemVO);
-            }
-        }
-
-        orderVO.setCartItems(cartItems);
+        orderVO.setOrderItems(itemVOs);
         return orderVO;
     }
 
@@ -289,6 +243,7 @@ public class OrderServiceImpl implements OrderService {
 
                 // 更新订单状态
                 order.setStatus(OrderStatus.SUCCESS.name());
+                System.out.println("amount: " + amount);
                 order.setTotalAmount(new BigDecimal(amount));
                 orderRepository.save(order);
 
@@ -305,16 +260,11 @@ public class OrderServiceImpl implements OrderService {
 
     @Override
     public void reduceStockpile(Integer orderId) {
-        List<Integer> cartItemIdList = cartsOrdersRelationRepository.findCartItemIdsByOrderId(orderId);
-        // 遍历 cartItemId 列表，查询对应的 Cart 条目
-        for (Integer cartItemId : cartItemIdList) {
-            Optional<Cart> cartOptional = cartRepository.findById(cartItemId);
-            if (!cartOptional.isPresent()) {
-                throw TomatoMallException.cartItemNotFind();
-            }
-            Cart cart = cartOptional.get();
-            Integer productId = cart.getProductId();
-            Integer quantity = cart.getQuantity();
+        List<OrderItem> orderItems = orderItemRepository.findByOrderId(orderId);
+        // 遍历订单明细，扣减库存
+        for (OrderItem item : orderItems) {
+            Integer productId = item.getProductId();
+            Integer quantity = item.getQuantity();
 
             // 查询对应的 Stockpile 条目
             Optional<Stockpile> stockpileOptional = stockpileRepository.findByProduct_Id(productId);
@@ -336,18 +286,13 @@ public class OrderServiceImpl implements OrderService {
      */
     private void updateProductSalesAndCheckForum(Integer orderId) {
         // 获取订单中的所有商品和数量
-        List<CartsOrdersRelation> relations = cartsOrdersRelationRepository.findByOrderId(orderId);
+        List<OrderItem> orderItems = orderItemRepository.findByOrderId(orderId);
 
-        for (CartsOrdersRelation relation : relations) {
-            Optional<Cart> cartOpt = cartRepository.findByCartItemId(relation.getCartItemId());
-            if (cartOpt.isPresent()) {
-                Cart cart = cartOpt.get();
-                Integer productId = cart.getProductId();
-                Integer quantity = cart.getQuantity();
-
+        for (OrderItem item : orderItems) {
+            Integer productId = item.getProductId();
+            Integer quantity = item.getQuantity();
                 // 更新销量并检查是否需要创建论坛
                 forumService.incrementSalesAndCheckForum(productId, quantity);
-            }
         }
     }
 

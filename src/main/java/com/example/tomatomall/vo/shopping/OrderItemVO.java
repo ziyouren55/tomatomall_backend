@@ -4,17 +4,18 @@ import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
 
+import java.math.BigDecimal;
+
 @Getter
 @Setter
 @NoArgsConstructor
-public class CartItemVO
-{
-    private String cartItemId;
-    private String productId;
+public class OrderItemVO {
+    private Integer orderId;
+    private Integer productId;
     private String title;
-    private Double price;
-    private String description;
     private String cover;
-    private String detail;
+    private BigDecimal price;
     private Integer quantity;
+    private BigDecimal subtotal;
 }
+

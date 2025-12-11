@@ -40,7 +40,7 @@ public class CartServiceImpl implements CartService {
     AccountRepository accountRepository;
 
     @Autowired
-    CartsOrdersRelationRepository cartsOrdersRelationRepository;
+    OrderItemRepository orderItemRepository;
 
     @Override
     public CartItemVO addProductToCart(CartItemVO cartItemVO, Integer userId) {
@@ -50,11 +50,7 @@ public class CartServiceImpl implements CartService {
         if (!product.isPresent())
             throw TomatoMallException.productNotFind();
 
-        Optional<Cart> cartCheck = cartRepository.findByUserIdAndProductId(userId, productId);
-        if (cartCheck.isPresent())
-            throw TomatoMallException.cartItemAlreadyExists();
-
-        // 检查库存
+        // 检查库存（不在购物车阶段扣减库存）
         Optional<Stockpile> stockpileOpt = stockpileRepository.findByProduct_Id(productId);
         if (!stockpileOpt.isPresent()) {
             // 如果库存不存在，创建默认库存记录
@@ -67,28 +63,33 @@ public class CartServiceImpl implements CartService {
         }
 
         Stockpile stockpile = stockpileOpt.get();
-        if (stockpile.getAmount() < cartItemVO.getQuantity())
+        if (stockpile.getAmount() < cartItemVO.getQuantity()) {
             throw TomatoMallException.cartItemQuantityOutOfStock();
+        }
 
-
-        Cart newCart = new Cart();
-        newCart.setUserId(userId);
-        newCart.setProductId(Integer.valueOf(cartItemVO.getProductId()));
-        newCart.setQuantity(cartItemVO.getQuantity());
-        newCart.setState("SHOW"); // 设置初始状态为SHOW
-        cartRepository.save(newCart);
-
-        stockpile.setAmount(stockpile.getAmount() - newCart.getQuantity());
-        stockpileRepository.save(stockpile);
-
-        Optional<Cart> cart = cartRepository.findByUserIdAndProductId(userId, productId);
-        if (!cart.isPresent())
-            throw TomatoMallException.cartItemNotFind();
+        // 若已存在同商品的购物车项，则叠加数量；否则新建
+        Optional<Cart> existingOpt = cartRepository.findByUserIdAndProductId(userId, productId);
+        Cart savedCart;
+        if (existingOpt.isPresent()) {
+            Cart existing = existingOpt.get();
+            int newQty = existing.getQuantity() + cartItemVO.getQuantity();
+            if (stockpile.getAmount() < cartItemVO.getQuantity()) {
+                throw TomatoMallException.cartItemQuantityOutOfStock();
+            }
+            existing.setQuantity(newQty);
+            savedCart = cartRepository.save(existing);
+        } else {
+            Cart newCart = new Cart();
+            newCart.setUserId(userId);
+            newCart.setProductId(Integer.valueOf(cartItemVO.getProductId()));
+            newCart.setQuantity(cartItemVO.getQuantity());
+            savedCart = cartRepository.save(newCart);
+        }
 
         CartItemVO newCartItemVO = new CartItemVO();
         BeanUtils.copyProperties(product.get(), newCartItemVO);
         newCartItemVO.setProductId(String.valueOf(productId));
-        newCartItemVO.setCartItemId(String.valueOf(cart.get().getCartItemId()));
+        newCartItemVO.setCartItemId(String.valueOf(savedCart.getCartItemId()));
         newCartItemVO.setQuantity(cartItemVO.getQuantity());
 
         return newCartItemVO;
@@ -100,15 +101,6 @@ public class CartServiceImpl implements CartService {
         if (!cart.isPresent())
             throw TomatoMallException.cartItemNotFind();
 
-        Optional<Stockpile> stockpileOpt = stockpileRepository.findByProduct_Id(cart.get().getProductId());
-        if(!stockpileOpt.isPresent()) {
-            // 如果库存不存在，说明数据异常，但为了不阻塞删除操作，我们跳过库存恢复
-            cartRepository.deleteById(Integer.valueOf(cartItemId));
-            return "删除成功（库存记录不存在，已跳过库存恢复）";
-        }
-        Stockpile stockpile = stockpileOpt.get();
-        stockpile.setAmount(stockpile.getAmount() + cart.get().getQuantity());
-        stockpileRepository.save(stockpile);
         cartRepository.deleteById(Integer.valueOf(cartItemId));
 
         return "删除成功";
@@ -120,7 +112,7 @@ public class CartServiceImpl implements CartService {
         if (!cart.isPresent())
             throw TomatoMallException.cartItemNotFind();
 
-        // 检查库存
+        // 检查库存（不在购物车阶段扣减库存）
         Integer productId = cart.get().getProductId();
         Optional<Stockpile> stockpileOpt = stockpileRepository.findByProduct_Id(productId);
         if (!stockpileOpt.isPresent()) {
@@ -138,18 +130,9 @@ public class CartServiceImpl implements CartService {
         }
 
         Stockpile stockpile = stockpileOpt.get();
-
-        int firstAmount = cart.get().getQuantity();
-        int lastAmount = updateQuantityVO.getQuantity();
-
-        int num = firstAmount - lastAmount;
-        int new_stock = stockpile.getAmount() + num;
-        if (new_stock  < 0)
+        if (stockpile.getAmount() < updateQuantityVO.getQuantity()) {
             throw TomatoMallException.cartItemQuantityOutOfStock();
-
-        stockpile.setAmount(new_stock);
-
-        stockpileRepository.save(stockpile);
+        }
 
         cart.get().setQuantity(updateQuantityVO.getQuantity());
         cartRepository.save(cart.get());
@@ -158,17 +141,15 @@ public class CartServiceImpl implements CartService {
 
     @Override
     public CartItemsVO getProductListFromCart(Integer userId) {
-        List<Cart> cartList = cartRepository.findAll();
+        // 仅查询当前用户的购物车
+        List<Cart> cartList = cartRepository.findByUserId(userId);
         CartItemsVO cartItemsVO = new CartItemsVO();
         List<CartItemVO> cartItemVOS = new ArrayList<>();
         double totalAmount = 0.0;
         for (Cart cart : cartList) {
-            // 只显示SHOW状态的购物车项
-            if ("SHOW".equals(cart.getState())) {
-                CartItemVO cartItemVO = toCartItemVO(cart);
-                cartItemVOS.add(cartItemVO);
-                totalAmount = totalAmount + cartItemVO.getPrice();
-            }
+            CartItemVO cartItemVO = toCartItemVO(cart);
+            cartItemVOS.add(cartItemVO);
+            totalAmount = totalAmount + cartItemVO.getPrice();
         }
 
         cartItemsVO.setCartItems(cartItemVOS);
@@ -198,7 +179,6 @@ public class CartServiceImpl implements CartService {
         List<Cart> cartItems = new ArrayList<>();
         List<String> cartItemIds = orderCheckoutVO.getCartItemIds();
         String payment_method = orderCheckoutVO.getPaymentMethod();
-        ReceiverInfoVO receiverInfoVO = orderCheckoutVO.getReceiverInfoVO();
         String username = account.getUsername();
         int userId = account.getId();
 
@@ -238,18 +218,29 @@ public class CartServiceImpl implements CartService {
         orderRepository.save(order);
         Integer orderId = order.getOrderId();
 
-        // 将购物车项状态改为HIDDEN并创建购物车-订单关系
+        // 生成订单明细快照，并移除购物车项
+        List<OrderItem> orderItems = new ArrayList<>();
         for (Cart cartItem : cartItems) {
-            // 更新购物车项状态为HIDDEN
-            cartItem.setState("HIDDEN");
-            cartRepository.save(cartItem);
+            OrderItem oi = new OrderItem();
+            oi.setOrderId(orderId);
+            oi.setProductId(cartItem.getProductId());
 
-            // 创建购物车-订单关系
-            CartsOrdersRelation relation = new CartsOrdersRelation();
-            relation.setCartItemId(cartItem.getCartItemId());
-            relation.setOrderId(orderId);
-            cartsOrdersRelationRepository.save(relation);
+            Optional<Product> productOpt = productRepository.findById(cartItem.getProductId());
+            if (!productOpt.isPresent()) {
+                throw TomatoMallException.productNotFind();
+            }
+            Product product = productOpt.get();
+            oi.setTitle(product.getTitle());
+            oi.setCover(product.getCover());
+            BigDecimal price = BigDecimal.valueOf(product.getPrice());
+            oi.setPrice(price);
+            oi.setQuantity(cartItem.getQuantity());
+            oi.setSubtotal(price.multiply(BigDecimal.valueOf(cartItem.getQuantity())));
+            orderItems.add(oi);
         }
+        orderItemRepository.saveAll(orderItems);
+
+        cartRepository.deleteAll(cartItems);
 
         OrderSubmitVO orderSubmitVO = new OrderSubmitVO();
         orderSubmitVO.setUsername(username);

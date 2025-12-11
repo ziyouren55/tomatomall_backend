@@ -22,6 +22,6 @@ public class OrderVO {
     private String address;
     private String status;
 
-    // 添加订单关联的购物车项信息
-    private List<CartItemVO> cartItems;
+    // 订单明细快照
+    private List<OrderItemVO> orderItems;
 }

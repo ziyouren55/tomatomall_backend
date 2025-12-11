@@ -56,6 +56,7 @@ public class LoginInterceptor implements HandlerInterceptor
     // 白名单逻辑集中管理
     private boolean isWhitelistedRequest(HttpServletRequest request) {
         String path = request.getRequestURI();
+        String lowerPath = path == null ? "" : path.toLowerCase();
         String method = request.getMethod();
 
         // 注册接口：POST /api/accounts
@@ -70,6 +71,11 @@ public class LoginInterceptor implements HandlerInterceptor
 
         // 商品搜索接口：GET /api/products/search
         if ("GET".equalsIgnoreCase(method) && "/api/products/search".equals(path)) {
+            return true;
+        }
+
+        // 支付宝回调/回跳：路径大小写、前缀不敏感（/api 可有可无）
+        if (lowerPath.contains("/orders/notify") || lowerPath.contains("/orders/returnurl")) {
             return true;
         }
 
@@ -94,6 +100,7 @@ public class LoginInterceptor implements HandlerInterceptor
         }
 
         // 其他白名单规则可在此扩展
+        System.out.println("Blocked by LoginInterceptor, path=" + path + ", method=" + method);
         return false;
     }
 }

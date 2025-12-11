@@ -59,9 +59,8 @@ public class AlipayUtil {
      * 验证支付宝回调签名
      */
     public boolean verifySignature(Map<String, String> params) throws AlipayApiException {
-        String sign = params.get("sign");
-        String content = AlipaySignature.getSignCheckContentV1(params);
-        return AlipaySignature.rsa256CheckContent(content, sign, alipayPublicKey, "UTF-8");
+        // 使用官方推荐的 rsaCheckV1，直接传入完整参数、配置的编码与签名算法
+        return AlipaySignature.rsaCheckV1(params, alipayPublicKey, charset, signType);
     }
 
     /**

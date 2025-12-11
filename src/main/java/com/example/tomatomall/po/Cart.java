@@ -1,13 +1,10 @@
 package com.example.tomatomall.po;
 
-import com.example.tomatomall.vo.shopping.CartItemVO;
-import com.example.tomatomall.vo.shopping.CartItemsVO;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
 
 import javax.persistence.*;
-import java.util.Date;
 
 @Getter
 @Setter
@@ -33,16 +30,4 @@ public class Cart
         columnDefinition = "INT DEFAULT 1 COMMENT '商品数量，默认为1'")
     private Integer quantity = 1;
 
-    @Column(name = "state",nullable = false)
-    private String state = "SHOW";
-
-//    @ManyToOne(cascade = CascadeType.ALL)
-//    @JoinColumn(name = "account",nullable = false,
-//            foreignKey = @ForeignKey(name = "fk_user_cart"))
-//    private Account account;
-//
-//    @ManyToOne(cascade = CascadeType.ALL)
-//    @JoinColumn(name = "product", nullable = false,
-//            foreignKey = @ForeignKey(name = "fk_product_cart"))
-//    private Product product;
 }
