@@ -32,8 +32,8 @@ public class Order
     private String paymentMethod;
 
     @Column(name = "status", nullable = false,
-        columnDefinition = "VARCHAR(20) DEFAULT 'PENDING' COMMENT '订单支付状态（PENDING, SUCCESS, FAILED, TIMEOUT）'")
-    private String status = OrderStatus.PENDING.name();
+        columnDefinition = "VARCHAR(20) DEFAULT 'PENDING' COMMENT '订单支付状态（PENDING, PAID, SUCCESS, DELIVERED, COMPLETED, FAILED, CANCELLED, TIMEOUT）'")
+    private String status = OrderStatus.PENDING.getCode();
 
     @Column(name = "create_time", columnDefinition = "TIMESTAMP DEFAULT CURRENT_TIMESTAMP COMMENT '订单创建时间'")
     private Timestamp createTime;

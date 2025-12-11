@@ -49,6 +49,10 @@ public class LoginInterceptor implements HandlerInterceptor
         }
         else
         {
+            System.out.println("Blocked by LoginInterceptor, path="
+                           + request.getRequestURI()
+                           + ", method=" + request.getMethod()
+                           + ", reason=no or invalid token");
             throw TomatoMallException.notLogin();
         }
     }
@@ -58,6 +62,11 @@ public class LoginInterceptor implements HandlerInterceptor
         String path = request.getRequestURI();
         String lowerPath = path == null ? "" : path.toLowerCase();
         String method = request.getMethod();
+
+        // 在 isWhitelistedRequest 开头加入
+        if ("/".equals(path) || "/index.html".equals(path) || "/error".equals(path)) {
+            return true;
+        }
 
         // 注册接口：POST /api/accounts
         if ("POST".equalsIgnoreCase(method) && "/api/accounts".equals(path)) {
@@ -100,7 +109,6 @@ public class LoginInterceptor implements HandlerInterceptor
         }
 
         // 其他白名单规则可在此扩展
-        System.out.println("Blocked by LoginInterceptor, path=" + path + ", method=" + method);
         return false;
     }
 }

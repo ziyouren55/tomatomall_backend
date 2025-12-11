@@ -35,11 +35,11 @@ public class OrderServiceImpl implements OrderService {
         @Override
         public int compare(OrderVO o1, OrderVO o2) {
             // PENDING状态的订单排在前面
-            if (OrderStatus.PENDING.name().equals(o1.getStatus())
-                    && !OrderStatus.PENDING.name().equals(o2.getStatus())) {
+            if (OrderStatus.PENDING.getCode().equals(o1.getStatus())
+                    && !OrderStatus.PENDING.getCode().equals(o2.getStatus())) {
                 return -1;
-            } else if (!OrderStatus.PENDING.name().equals(o1.getStatus())
-                    && OrderStatus.PENDING.name().equals(o2.getStatus())) {
+            } else if (!OrderStatus.PENDING.getCode().equals(o1.getStatus())
+                    && OrderStatus.PENDING.getCode().equals(o2.getStatus())) {
                 return 1;
             } else {
                 // 如果状态相同，按照创建时间倒序排列（最新的在前面）
@@ -237,12 +237,12 @@ public class OrderServiceImpl implements OrderService {
                     throw TomatoMallException.orderNotFound();
                 }
                 Order order = orderOpt.get();
-                if (OrderStatus.SUCCESS.name().equals(order.getStatus())) {
+                if (OrderStatus.SUCCESS.getCode().equals(order.getStatus())) {
                     return;
                 }
 
                 // 更新订单状态
-                order.setStatus(OrderStatus.SUCCESS.name());
+                order.setStatus(OrderStatus.SUCCESS.getCode());
                 System.out.println("amount: " + amount);
                 order.setTotalAmount(new BigDecimal(amount));
                 orderRepository.save(order);

@@ -4,6 +4,7 @@ import com.alipay.api.AlipayApiException;
 import com.example.tomatomall.service.OrderService;
 import com.example.tomatomall.vo.shopping.OrderVO;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.web.bind.annotation.*;
 import com.example.tomatomall.vo.Response;
 import org.springframework.web.bind.annotation.RestController;
@@ -19,6 +20,9 @@ public class OrderController {
 
     @Autowired
     OrderService orderService;
+
+    @Value("${frontend.base-url:http://localhost:5173}")
+    private String frontendBaseUrl;
 
     @GetMapping("")
     public Response getAllOrders()
@@ -63,9 +67,22 @@ public class OrderController {
     }
 
     @GetMapping("/returnUrl")
-    public void returnUrl(HttpServletResponse response) throws IOException {
-        // RestController 默认返回字符串到 body，这里使用重定向确保浏览器跳转
-        System.out.println("return_url");
-        response.sendRedirect("/#/orders?pay=success");
+    public void returnUrl(HttpServletRequest request, HttpServletResponse response) throws IOException {
+        // 同步回跳：后端中转，携带核心参数跳转到前端支付结果页
+        String outTradeNo = request.getParameter("out_trade_no");
+        String tradeNo = request.getParameter("trade_no");
+        String totalAmount = request.getParameter("total_amount");
+        String status = request.getParameter("trade_status");
+
+        // 构造前端支付结果页路由，前端基地址从配置中读取
+        String base = frontendBaseUrl.endsWith("/") ? frontendBaseUrl.substring(0, frontendBaseUrl.length() - 1) : frontendBaseUrl;
+        StringBuilder redirectUrl = new StringBuilder(base + "/pay/result?pay=success");
+        if (status != null) redirectUrl.append("&status=").append(status);
+        if (outTradeNo != null) redirectUrl.append("&orderId=").append(outTradeNo);
+        if (tradeNo != null) redirectUrl.append("&tradeNo=").append(tradeNo);
+        if (totalAmount != null) redirectUrl.append("&amount=").append(totalAmount);
+
+        System.out.println("return_url redirect to: " + redirectUrl);
+        response.sendRedirect(redirectUrl.toString());
     }
 }

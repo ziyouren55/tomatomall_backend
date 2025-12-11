@@ -211,7 +211,7 @@ public class CartServiceImpl implements CartService {
         // 创建订单
         Order order = new Order();
         order.setUserId(userId);
-        order.setStatus(OrderStatus.PENDING.name());
+        order.setStatus(OrderStatus.PENDING.getCode());
         order.setPaymentMethod(payment_method);
         order.setCreateTime(Timestamp.valueOf(LocalDateTime.now()));
         order.setTotalAmount(BigDecimal.valueOf(totalAmount));
@@ -247,7 +247,7 @@ public class CartServiceImpl implements CartService {
         orderSubmitVO.setPaymentMethod(payment_method);
         orderSubmitVO.setTotalAmount(String.valueOf(totalAmount));
         orderSubmitVO.setCreateTime(String.valueOf(LocalDateTime.now()));
-        orderSubmitVO.setStatus(OrderStatus.PENDING.name());
+        orderSubmitVO.setStatus(OrderStatus.PENDING.getCode());
         orderSubmitVO.setOrderId(String.valueOf(orderId));
 
         return orderSubmitVO;
