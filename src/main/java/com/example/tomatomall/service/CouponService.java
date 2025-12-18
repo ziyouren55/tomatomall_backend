@@ -16,7 +16,6 @@ public interface CouponService {
     // 用户优惠券相关
     List<UserCouponVO> getUserCoupons(Integer userId);
     UserCouponVO exchangeCoupon(Integer userId, Integer couponId);
-    UserCouponVO claimCoupon(Integer userId, Integer couponId);
     boolean applyCouponToOrder(Integer userId, Integer userCouponId, Integer couponId, Integer orderId);
     boolean releaseCoupon(Integer userId, Integer userCouponId, Integer orderId);
     UserCouponVO getUserCouponById(Integer userCouponId);

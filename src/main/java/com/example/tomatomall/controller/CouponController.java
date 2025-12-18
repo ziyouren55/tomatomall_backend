@@ -21,13 +21,6 @@ public class CouponController {
         return Response.buildSuccess(couponService.getAvailableCoupons());
     }
 
-    /**
-     * 领取优惠券（无需积分）
-     */
-    @PostMapping("/claim/{couponId}")
-    public Response<?> claimCoupon(@RequestAttribute("userId") Integer userId, @PathVariable Integer couponId) {
-        return Response.buildSuccess(couponService.claimCoupon(userId, couponId));
-    }
 
     /**
      * 获取优惠券详情
