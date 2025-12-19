@@ -28,7 +28,7 @@ public class ForumServiceImpl implements ForumService {
     private Integer salesThreshold = 100;
 
     private ForumVO buildForumVO(Forum forum) {
-        Product product = productRepository.findById(forum.getBookId()).orElse(null);
+        Product product = productRepository.findById(forum.getProduct().getId()).orElse(null);
         if (product == null) {
             return null;
         }
@@ -40,20 +40,34 @@ public class ForumServiceImpl implements ForumService {
 
     @Override
     @Transactional
-    public ForumVO createBookForum(Integer bookId) {
+    public ForumVO createProductForum(Integer productId) {
+        // 委托给 ensureProductForum，避免重复逻辑
+        return ensureProductForum(productId);
+    }
+
+    @Override
+    @Transactional
+    public ForumVO ensureProductForum(Integer productId) {
         // 检查论坛是否已存在
-        Optional<Forum> existingForum = forumRepository.findByBookId(bookId);
+        Optional<Forum> existingForum = forumRepository.findByProductId(productId);
         if (existingForum.isPresent()) {
-            return existingForum.get().toVO();
+            Forum forum = existingForum.get();
+            Product product = productRepository.findById(productId)
+                    .orElseThrow(() -> new TomatoMallException("书籍不存在"));
+
+            ForumVO forumVO = forum.toVO();
+            forumVO.setBookTitle(product.getTitle());
+            forumVO.setBookCover(product.getCover());
+            return forumVO;
         }
 
         // 获取书籍信息
-        Product product = productRepository.findById(bookId)
+        Product product = productRepository.findById(productId)
                 .orElseThrow(() -> new TomatoMallException("书籍不存在"));
 
         // 创建论坛
         Forum forum = new Forum();
-        forum.setBookId(bookId);
+        forum.setProduct(product);
         forum.setName(product.getTitle() + "读者交流区");
         forum.setDescription("关于《" + product.getTitle() + "》的讨论区，欢迎分享阅读心得");
         forum.setPostCount(0);
@@ -72,11 +86,11 @@ public class ForumServiceImpl implements ForumService {
 
 
     @Override
-    public ForumVO getForumByBookId(Integer bookId) {
-        Forum forum = forumRepository.findByBookId(bookId)
+    public ForumVO getForumByProductId(Integer productId) {
+        Forum forum = forumRepository.findByProductId(productId)
                 .orElseThrow(() -> new TomatoMallException("该书籍尚未创建论坛"));
 
-        Product product = productRepository.findById(bookId)
+        Product product = productRepository.findById(productId)
                 .orElseThrow(() -> new TomatoMallException("书籍不存在"));
 
         ForumVO forumVO = forum.toVO();
@@ -91,7 +105,7 @@ public class ForumServiceImpl implements ForumService {
         Forum forum = forumRepository.findById(forumId)
                 .orElseThrow(() -> new TomatoMallException("论坛不存在"));
 
-        Product product = productRepository.findById(forum.getBookId())
+        Product product = productRepository.findById(forum.getProduct().getId())
                 .orElseThrow(() -> new TomatoMallException("书籍不存在"));
 
         ForumVO forumVO = forum.toVO();
@@ -182,20 +196,20 @@ public class ForumServiceImpl implements ForumService {
     @Override
     public void detectAndCreateForums() {
         // 查找销量超过阈值但尚未创建论坛的书籍
-        List<Product> hotBooks = productRepository.findBySalesCountGreaterThanAndIdNotIn(
+        List<Product> hotProducts = productRepository.findBySalesCountGreaterThanAndIdNotIn(
                 salesThreshold,
-                forumRepository.findAllBookIds());
+                forumRepository.findAllProductIds());
 
         // 为每本热门书籍创建论坛
-        for (Product book : hotBooks) {
-            createBookForum(book.getId());
+        for (Product product : hotProducts) {
+            createProductForum(product.getId());
         }
     }
 
     @Override
-    public boolean incrementSalesAndCheckForum(Integer bookId, Integer incrementCount)
+    public boolean incrementSalesAndCheckForum(Integer productId, Integer incrementCount)
     {
-        Product product = productRepository.findById(bookId)
+        Product product = productRepository.findById(productId)
                 .orElseThrow(() -> new TomatoMallException("书籍不存在"));
 
         // 更新销量
@@ -204,14 +218,14 @@ public class ForumServiceImpl implements ForumService {
         productRepository.save(product);
 
         // 如果已存在论坛则直接返回
-        Optional<Forum> existingForum = forumRepository.findByBookId(bookId);
+        Optional<Forum> existingForum = forumRepository.findByProductId(productId);
         if (existingForum.isPresent()) {
             return false;
         }
 
         // 达到阈值自动创建论坛
         if (product.getSalesCount() != null && product.getSalesCount() >= salesThreshold) {
-            createBookForum(bookId);
+            createProductForum(productId);
             return true;
         }
         return false;

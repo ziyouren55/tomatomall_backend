@@ -22,8 +22,10 @@ public class Forum {
     @Column(name = "name", nullable = false)
     private String name;
 
-    @Column(name = "book_id", nullable = false)
-    private Integer bookId;
+    // 用 book_id 这列存 product.id，并且 unique 保证“一对零/一”
+    @OneToOne(fetch = FetchType.LAZY, optional = false)
+    @JoinColumn(name = "product_id", nullable = false, unique = true)
+    private Product product;
 
     @Column(name = "description")
     private String description;
@@ -44,7 +46,7 @@ public class Forum {
         ForumVO vo = new ForumVO();
         vo.setId(id);
         vo.setName(name);
-        vo.setBookId(bookId);
+        vo.setProductId(product != null ? product.getId() : null);
         vo.setDescription(description);
         vo.setPostCount(postCount);
         vo.setStatus(status);

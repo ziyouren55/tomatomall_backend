@@ -18,9 +18,10 @@ public class ForumController {
     /**
      * 获取书籍的论坛
      */
+    //todo 将book相关的命名重新改为product，需前后端一致
     @GetMapping("/book/{bookId}")
-    public Response<ForumVO> getForumByBook(@PathVariable Integer bookId) {
-        ForumVO forum = forumService.getForumByBookId(bookId);
+    public Response<ForumVO> getForumByProductId(@PathVariable Integer bookId) {
+        ForumVO forum = forumService.getForumByProductId(bookId);
         return Response.buildSuccess(forum);
     }
 

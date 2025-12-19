@@ -6,10 +6,16 @@ import java.util.List;
 
 public interface ForumService {
     // 创建书籍论坛
-    ForumVO createBookForum(Integer bookId);
+    ForumVO createProductForum(Integer productId);
+
+    /**
+     * 确保指定书籍（商品）拥有论坛：
+     * 如果已存在则返回已有论坛，如果不存在则创建后返回
+     */
+    ForumVO ensureProductForum(Integer productId);
 
     // 根据书籍ID获取论坛
-    ForumVO getForumByBookId(Integer bookId);
+    ForumVO getForumByProductId(Integer productId);
 
     // 获取论坛详情
     ForumVO getForumById(Integer forumId);

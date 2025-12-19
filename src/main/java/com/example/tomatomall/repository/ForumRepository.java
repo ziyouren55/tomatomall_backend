@@ -12,13 +12,13 @@ import java.util.Optional;
 
 @Repository
 public interface ForumRepository extends JpaRepository<Forum, Integer> {
-    Optional<Forum> findByBookId(Integer bookId);
+    Optional<Forum> findByProductId(Integer productId);
     List<Forum> findByStatus(String status);
     Page<Forum> findByStatus(String status, Pageable pageable);
     Page<Forum> findByStatusAndPostCountGreaterThan(String status, Integer postCount, Pageable pageable);
     Page<Forum> findByNameContainingIgnoreCase(String keyword, Pageable pageable);
     Page<Forum> findByNameContainingIgnoreCaseAndStatus(String keyword, String status, Pageable pageable);
     // 新增：查询所有已有论坛的书籍ID
-    @Query("SELECT f.bookId FROM Forum f")
-    List<Integer> findAllBookIds();
+    @Query("SELECT f.product.id FROM Forum f")
+    List<Integer> findAllProductIds();
 }

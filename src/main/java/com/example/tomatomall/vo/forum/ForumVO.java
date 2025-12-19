@@ -12,7 +12,7 @@ import java.util.Date;
 public class ForumVO {
     private Integer id;
     private String name;
-    private Integer bookId;
+    private Integer productId;
     private String description;
     private Integer postCount;
     private String status;

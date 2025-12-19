@@ -21,9 +21,19 @@ public class AdminForumController {
     /**
      * 创建书籍论坛
      */
+    //todo 将book相关的命名重新改为product，需前后端一致
     @PostMapping("/books/{bookId}/forum")
-    public Response createBookForum(@PathVariable Integer bookId) {
-        return Response.buildSuccess(forumService.createBookForum(bookId));
+    public Response createProductForum(@PathVariable Integer bookId) {
+        return Response.buildSuccess(forumService.createProductForum(bookId));
+    }
+
+    /**
+     * 确保书籍论坛存在：
+     * 若已存在则直接返回；若不存在则创建后返回
+     */
+    @PostMapping("/books/{bookId}/forum/ensure")
+    public Response ensureProductForum(@PathVariable Integer bookId) {
+        return Response.buildSuccess(forumService.ensureProductForum(bookId));
     }
 
     /**
