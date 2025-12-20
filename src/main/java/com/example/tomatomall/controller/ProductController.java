@@ -1,8 +1,13 @@
 package com.example.tomatomall.controller;
 
 
+import com.example.tomatomall.enums.UserRole;
+import com.example.tomatomall.repository.ProductRepository;
 import com.example.tomatomall.repository.StockpileRepository;
 import com.example.tomatomall.service.ProductService;
+import com.example.tomatomall.vo.products.SearchResultVO;
+import com.example.tomatomall.vo.PageResultVO;
+import com.example.tomatomall.vo.products.StockpileVO;
 import com.example.tomatomall.vo.products.ProductVO;
 import com.example.tomatomall.vo.Response;
 import org.springframework.web.bind.annotation.*;
@@ -20,50 +25,71 @@ public class ProductController
     ProductService productService;
 
     @GetMapping
-    public Response getProducts(
+    public Response<SearchResultVO> getProducts(
             @RequestParam(defaultValue = "0") Integer page,
             @RequestParam(defaultValue = "20") Integer pageSize,
             @RequestParam(required = false) String sortBy,
             @RequestParam(required = false) String sortOrder) {
+        // 公共商品列表（主站）不做基于登录用户的过滤
         return Response.buildSuccess(productService.getProductList(page, pageSize, sortBy, sortOrder));
     }
 
+    /**
+     * 商家/管理员的产品管理接口（仅用于管理页）
+     * - 商家只能看到自己的商品
+     * - 管理员看到所有商品
+     */
+    @GetMapping("/manage")
+    public Response<SearchResultVO> getManageProducts(
+            @RequestParam(defaultValue = "0") Integer page,
+            @RequestParam(defaultValue = "20") Integer pageSize,
+            @RequestParam(required = false) String sortBy,
+            @RequestParam(required = false) String sortOrder,
+            @RequestAttribute(value = "userId", required = false) Integer userId,
+            @RequestAttribute(value = "userRole", required = false) UserRole userRole) {
+        // 仅在 Service 层处理权限与范围，Controller 仅负责路由和异常传递
+        if (userRole == null) {
+            throw com.example.tomatomall.exception.TomatoMallException.notLogin();
+        }
+        return Response.buildSuccess(productService.getManageProductList(page, pageSize, sortBy, sortOrder));
+    }
+
     @GetMapping("/{id}")
-    public Response getProduct(@PathVariable Integer id)
+    public Response<ProductVO> getProduct(@PathVariable Integer id)
     {
         return Response.buildSuccess(productService.getProduct(id));
     }
 
     @PutMapping()
-    public Response updateProduct(@RequestBody ProductVO productVO){
+    public Response<String> updateProduct(@RequestBody ProductVO productVO){
         return Response.buildSuccess(productService.updateProduct(productVO));
     }
 
     @PostMapping()
-    public Response createProduct(@RequestBody ProductVO productVO){
+    public Response<ProductVO> createProduct(@RequestBody ProductVO productVO){
         return Response.buildSuccess(productService.createProduct(productVO));
     }
 
     @DeleteMapping("/{id}")
-    public Response deleteProduct(@PathVariable("id") Integer id) {
+    public Response<String> deleteProduct(@PathVariable("id") Integer id) {
         return Response.buildSuccess(productService.deleteProduct(id));
     }
 
     @PatchMapping("/stockpile/{productId}")
-    public Response updateProductStockpile(@PathVariable("productId") Integer productId, @RequestBody Map<String, Integer> body) {
+    public Response<String> updateProductStockpile(@PathVariable("productId") Integer productId, @RequestBody Map<String, Integer> body) {
         Integer amount = body.get("amount");
         return Response.buildSuccess(productService.updateProductStockpile(productId, amount));
     }
 
 
     @GetMapping("/stockpile/{productId}")
-    public Response getProductStockpile(@PathVariable("productId") Integer productId)
+    public Response<StockpileVO> getProductStockpile(@PathVariable("productId") Integer productId)
     {
         return Response.buildSuccess(productService.getProductStockpile(productId));
     }
 
     @GetMapping("/stockpile")
-    public Response getAllStockpile(
+    public Response<PageResultVO<com.example.tomatomall.vo.products.StockpileVO>> getAllStockpile(
             @RequestParam(defaultValue = "0") Integer page,
             @RequestParam(defaultValue = "20") Integer pageSize)
     {
@@ -80,7 +106,7 @@ public class ProductController
      * @return 搜索结果
      */
     @GetMapping("/search")
-    public Response searchProducts(
+    public Response<SearchResultVO> searchProducts(
             @RequestParam String keyword,
             @RequestParam(defaultValue = "0") Integer page,
             @RequestParam(defaultValue = "20") Integer pageSize,

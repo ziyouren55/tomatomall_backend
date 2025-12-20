@@ -1,6 +1,8 @@
 package com.example.tomatomall.repository;
 
 import com.example.tomatomall.po.Stockpile;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
 
 import java.util.Optional;
@@ -15,5 +17,10 @@ public interface StockpileRepository extends JpaRepository<Stockpile,Integer>
     default Optional<Stockpile> findByProductId(Integer productId) {
         return findByProduct_Id(productId);
     }
+
+    /**
+     * 根据商品的商家ID查询库存（分页）
+     */
+    Page<Stockpile> findByProduct_Store_MerchantId(Integer merchantId, Pageable pageable);
 
 }

@@ -5,7 +5,8 @@ import lombok.Getter;
 @Getter
 public enum UserRole {
     USER("顾客"),
-    ADMIN("商家");
+    MERCHANT("商家"),
+    ADMIN("管理员");
 
     private final String description;
 
@@ -25,8 +26,11 @@ public enum UserRole {
         } catch (IllegalArgumentException e) {
             // 兼容旧数据或错误数据，尝试匹配
             String upperRole = role.toUpperCase();
-            if (upperRole.equals("ADMIN") || upperRole.equals("商家")) {
+            if (upperRole.equals("ADMIN") || upperRole.equals("管理员")) {
                 return ADMIN;
+            }
+            if (upperRole.equals("MERCHANT") || upperRole.equals("商家")) {
+                return MERCHANT;
             }
             return USER;
         }

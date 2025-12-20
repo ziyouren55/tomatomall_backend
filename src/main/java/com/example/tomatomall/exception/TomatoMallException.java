@@ -71,4 +71,9 @@ public class TomatoMallException extends RuntimeException{
     {
         return new TomatoMallException("无效的角色类型!");
     }
+    
+    public static TomatoMallException permissionDenied()
+    {
+        return new TomatoMallException("权限不足，无法执行此操作!");
+    }
 }

@@ -45,6 +45,8 @@ public class LoginInterceptor implements HandlerInterceptor
             request.setAttribute("currentUser", account);
             request.setAttribute("userId",account.getId());
             request.setAttribute("username",account.getUsername());
+            // 添加用户角色到 request attribute，便于 Controller 使用
+            request.setAttribute("userRole", account.getRole());
             return true;
         }
         else

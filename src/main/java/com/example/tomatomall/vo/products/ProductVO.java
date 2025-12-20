@@ -21,6 +21,7 @@ public class ProductVO
     private String cover;
     private String detail;
     private Integer salesCount;
+    private Integer storeId; // 店铺ID
 
     public Product toPO()
     {
@@ -33,6 +34,7 @@ public class ProductVO
         product.setCover(cover);
         product.setDetail(detail);
         product.setSalesCount(salesCount);
+        product.setStoreId(storeId);
 //        product.setSpecifications(specifications);
 
         return product;

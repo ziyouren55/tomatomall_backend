@@ -33,6 +33,12 @@ public interface ProductService
     StockpileVO getProductStockpile(Integer productId);
 
     /**
+     * 管理端获取商品列表（商家管理页 / 管理员管理页）
+     * Service 层内部会从 UserContext 获取当前用户并决定返回范围
+     */
+    SearchResultVO getManageProductList(Integer page, Integer pageSize, String sortBy, String sortOrder);
+
+    /**
      * 获取所有库存（分页）
      * @param page 页码（从0开始）
      * @param pageSize 每页数量

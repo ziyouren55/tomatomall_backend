@@ -55,6 +55,15 @@ public class Product
     @Column(name = "sales_count")
     private Integer salesCount = 0; // 默认销量为0
 
+    // 店铺ID：商品所属店铺
+    @Basic
+    @Column(name = "store_id")
+    private Integer storeId;
+
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "store_id", insertable = false, updatable = false)
+    private Store store;
+
     // 商品与库存的一对一关联关系
     @OneToOne(mappedBy = "product", cascade = CascadeType.ALL, orphanRemoval = true, fetch = FetchType.LAZY)
     private Stockpile stockpile;
@@ -87,6 +96,7 @@ public class Product
         productVO.setCover(cover);
         productVO.setDetail(detail);
         productVO.setSalesCount(salesCount);
+        productVO.setStoreId(storeId);
 //        productVO.setSpecifications(specifications);
 
         return productVO;
