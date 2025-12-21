@@ -37,7 +37,7 @@ public class Account {
 
     @Convert(converter = com.example.tomatomall.converter.UserRoleConverter.class)
     @Column(name = "role", nullable = false, columnDefinition = "VARCHAR(20) DEFAULT 'USER'")
-    private UserRole role = UserRole.USER;
+    private UserRole role = UserRole.CUSTOMER;
 
     @Basic
     @Column(name = "telephone")
@@ -70,7 +70,7 @@ public class Account {
         accountVO.setPassword(password);
         accountVO.setName(name);
         accountVO.setAvatar(avatar);
-        accountVO.setRole(role != null ? role.name() : UserRole.USER.name());
+        accountVO.setRole(role != null ? role.name() : UserRole.CUSTOMER.name());
         accountVO.setTelephone(telephone);
         accountVO.setEmail(email);
         accountVO.setLocation(location);

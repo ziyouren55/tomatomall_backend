@@ -230,4 +230,9 @@ public class ForumServiceImpl implements ForumService {
         }
         return false;
     }
+
+    @Override
+    public boolean existsProductForum(Integer productId) {
+        return forumRepository.findByProductId(productId).isPresent();
+    }
 }

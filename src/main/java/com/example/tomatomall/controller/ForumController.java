@@ -7,6 +7,8 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
+import java.util.Collections;
+import java.util.Map;
 
 @RestController
 @RequestMapping("/api/forums")
@@ -23,6 +25,16 @@ public class ForumController {
     public Response<ForumVO> getForumByProductId(@PathVariable Integer bookId) {
         ForumVO forum = forumService.getForumByProductId(bookId);
         return Response.buildSuccess(forum);
+    }
+
+    /**
+     * 轻量接口：检查某本书是否存在论坛（存在返回 { exists: true }）
+     * 不在未找到时抛出异常，避免控制台堆栈打印影响调用方判断。
+     */
+    @GetMapping("/book/{bookId}/exists")
+    public Response<Map<String, Boolean>> existsBookForum(@PathVariable Integer bookId) {
+        boolean exists = forumService.existsProductForum(bookId);
+        return Response.buildSuccess(Collections.singletonMap("exists", exists));
     }
 
     /**

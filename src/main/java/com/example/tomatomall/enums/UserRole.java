@@ -4,7 +4,7 @@ import lombok.Getter;
 
 @Getter
 public enum UserRole {
-    USER("顾客"),
+    CUSTOMER("顾客"),
     MERCHANT("商家"),
     ADMIN("管理员");
 
@@ -19,7 +19,7 @@ public enum UserRole {
      */
     public static UserRole fromString(String role) {
         if (role == null) {
-            return USER; // 默认角色
+            return CUSTOMER; // 默认角色
         }
         try {
             return UserRole.valueOf(role.toUpperCase());
@@ -32,7 +32,7 @@ public enum UserRole {
             if (upperRole.equals("MERCHANT") || upperRole.equals("商家")) {
                 return MERCHANT;
             }
-            return USER;
+            return CUSTOMER;
         }
     }
 

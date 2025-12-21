@@ -40,7 +40,7 @@ public class AccountVO
         account.setName(name);
         account.setAvatar(avatar);
         // 将字符串角色转换为枚举，如果为空则使用默认值
-        account.setRole(role != null ? UserRole.fromString(role) : UserRole.USER);
+        account.setRole(role != null ? UserRole.fromString(role) : UserRole.CUSTOMER);
         account.setTelephone(telephone);
         account.setEmail(email);
         account.setLocation(location);

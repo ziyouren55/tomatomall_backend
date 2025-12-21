@@ -47,7 +47,7 @@ public class AccountServiceImpl implements AccountService {
 
         // 验证并规范化角色
         if (accountVO.getRole() == null || accountVO.getRole().trim().isEmpty()) {
-            accountVO.setRole(UserRole.USER.name()); // 默认角色
+            accountVO.setRole(UserRole.CUSTOMER.name()); // 默认角色
         } else {
             // 验证角色是否有效
             if (!UserRole.isValid(accountVO.getRole())) {

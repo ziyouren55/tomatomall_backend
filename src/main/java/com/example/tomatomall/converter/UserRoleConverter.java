@@ -16,7 +16,7 @@ public class UserRoleConverter implements AttributeConverter<UserRole, String> {
     @Override
     public String convertToDatabaseColumn(UserRole attribute) {
         if (attribute == null) {
-            return UserRole.USER.name();
+            return UserRole.CUSTOMER.name();
         }
         return attribute.name();
     }
@@ -24,7 +24,7 @@ public class UserRoleConverter implements AttributeConverter<UserRole, String> {
     @Override
     public UserRole convertToEntityAttribute(String dbData) {
         if (dbData == null || dbData.trim().isEmpty()) {
-            return UserRole.USER;
+            return UserRole.CUSTOMER;
         }
         // 使用 UserRole.fromString 方法，它会处理无效值并返回默认值
         return UserRole.fromString(dbData);

@@ -73,7 +73,7 @@ public class BookCommentServiceImpl implements BookCommentService {
                 if (!userId.equals(comment.getUserId())) {
                     // 允许管理员删除
                     Optional<Account> account = accountRepository.findById(userId);
-                    if (!account.isPresent() || account.get().getRole() == null || account.get().getRole() == UserRole.USER) {
+                    if (!account.isPresent() || account.get().getRole() == null || account.get().getRole() == UserRole.CUSTOMER) {
                         throw new TomatoMallException("无权限删除该评论");
                     }
                 }

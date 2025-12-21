@@ -47,4 +47,11 @@ public interface ForumService {
      * @return 是否已创建论坛
      */
     boolean incrementSalesAndCheckForum(Integer bookId, Integer incrementCount);
+
+    /**
+     * 检查指定书籍是否已有论坛
+     * @param productId 书籍/商品 ID
+     * @return true 如果已存在论坛，false 否则
+     */
+    boolean existsProductForum(Integer productId);
 }
