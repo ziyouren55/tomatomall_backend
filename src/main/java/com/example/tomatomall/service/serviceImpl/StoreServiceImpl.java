@@ -86,6 +86,14 @@ public class StoreServiceImpl implements StoreService {
         }
         storeRepository.deleteById(id);
     }
+
+    @Override
+    public PageResultVO<Store> getAllStores(Integer page, Integer pageSize) {
+        if (page == null || page < 0) page = 0;
+        if (pageSize == null || pageSize <= 0) pageSize = 20;
+        Page<Store> p = storeRepository.findAll(PageRequest.of(page, pageSize));
+        return new PageResultVO<>(p.getContent(), p.getTotalElements(), page, pageSize);
+    }
 }
 
 

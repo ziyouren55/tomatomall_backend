@@ -5,6 +5,7 @@ import com.example.tomatomall.po.Store;
 import com.example.tomatomall.repository.StoreRepository;
 import com.example.tomatomall.service.StoreService;
 import com.example.tomatomall.util.UserContext;
+import com.example.tomatomall.enums.UserRole;
 import com.example.tomatomall.vo.PageResultVO;
 import com.example.tomatomall.vo.Response;
 import org.springframework.web.bind.annotation.*;
@@ -39,6 +40,20 @@ public class StoreController {
     @GetMapping("/{id}")
     public Response<Store> getStoreById(@PathVariable Integer id) {
         return Response.buildSuccess(storeService.getStoreById(id));
+    }
+
+    /**
+     * 管理员：分页获取所有店铺
+     * - 仅管理员可访问
+     */
+    @GetMapping
+    public Response<PageResultVO<Store>> getAllStores(
+            @RequestParam(defaultValue = "0") Integer page,
+            @RequestParam(defaultValue = "20") Integer pageSize) {
+        // 权限校验（仅管理员）
+        UserRole currentRole = UserContext.getCurrentUserRole();
+        if (currentRole != UserRole.ADMIN) throw TomatoMallException.permissionDenied();
+        return Response.buildSuccess(storeService.getAllStores(page, pageSize));
     }
 
     /**

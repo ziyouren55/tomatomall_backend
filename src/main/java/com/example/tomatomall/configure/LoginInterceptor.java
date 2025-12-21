@@ -2,6 +2,8 @@ package com.example.tomatomall.configure;
 
 import com.example.tomatomall.exception.TomatoMallException;
 import com.example.tomatomall.po.Account;
+import org.springframework.web.context.request.RequestAttributes;
+import org.springframework.web.context.request.RequestContextHolder;
 import com.example.tomatomall.util.TokenUtil;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
@@ -41,12 +43,28 @@ public class LoginInterceptor implements HandlerInterceptor
         if (token != null && tokenUtil.verifyToken(token))
         {
             Account account = tokenUtil.getAccount(token);
+            // 保持原有的 request/session 属性设置，兼容老代码
             request.getSession().setAttribute("currentUser", account);
             request.setAttribute("currentUser", account);
-            request.setAttribute("userId",account.getId());
-            request.setAttribute("username",account.getUsername());
-            // 添加用户角色到 request attribute，便于 Controller 使用
+            request.setAttribute("userId", account.getId());
+            request.setAttribute("username", account.getUsername());
             request.setAttribute("userRole", account.getRole());
+
+            // 额外将这些属性写入 RequestContextHolder 的 RequestAttributes，
+            // 确保 UserContext（通过 RequestContextHolder 访问）能读取到它们
+            RequestAttributes reqAttrs = RequestContextHolder.getRequestAttributes();
+            if (reqAttrs != null) {
+                reqAttrs.setAttribute("currentUser", account, RequestAttributes.SCOPE_REQUEST);
+                reqAttrs.setAttribute("userId", account.getId(), RequestAttributes.SCOPE_REQUEST);
+                reqAttrs.setAttribute("username", account.getUsername(), RequestAttributes.SCOPE_REQUEST);
+                reqAttrs.setAttribute("userRole", account.getRole(), RequestAttributes.SCOPE_REQUEST);
+            } else {
+                // 如果 RequestAttributes 为 null，打印日志以便排查（可能是异步/非HTTP线程）
+                System.out.println("LoginInterceptor: RequestAttributes is null - RequestContextHolder not populated for this thread.");
+            }
+
+            // 简单调试日志，帮助定位 token / account 是否正确解析
+            // System.out.println("LoginInterceptor: authenticated account id=" + account.getId() + ", username=" + account.getUsername() + ", role=" + account.getRole());
             return true;
         }
         else
