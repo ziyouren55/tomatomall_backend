@@ -20,13 +20,18 @@ import java.math.BigDecimal;
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.List;
-import java.util.Map;
 import java.util.Optional;
 import java.util.stream.Collectors;
+import com.example.tomatomall.po.PaymentRecord;
+import com.example.tomatomall.repository.PaymentRecordRepository;
+import com.example.tomatomall.kafka.KafkaProducerService;
+import com.example.tomatomall.kafka.NotificationMessage;
+import java.util.HashMap;
+import java.util.Map;
 
 @Service
 public class OrderServiceImpl implements OrderService {
-    
+
     /**
      * 订单排序比较器：PENDING状态的订单排在前面，相同状态按创建时间倒序排列
      * 使用静态内部类避免生成匿名内部类
@@ -54,9 +59,9 @@ public class OrderServiceImpl implements OrderService {
             }
         }
     }
-    
+
     private static final Comparator<OrderVO> ORDER_COMPARATOR = new OrderComparator();
-    
+
     @Autowired
     OrderRepository orderRepository;
 
@@ -80,6 +85,12 @@ public class OrderServiceImpl implements OrderService {
 
     @Autowired
     OrderItemRepository orderItemRepository;
+
+    @Autowired
+    PaymentRecordRepository paymentRecordRepository;
+
+    @Autowired
+    KafkaProducerService kafkaProducerService;
 
     @Override
     public List<OrderVO> getAllOrders() {
@@ -105,7 +116,7 @@ public class OrderServiceImpl implements OrderService {
         }
 
         Order order = orderOpt.get();
-        
+
         // 验证订单是否属于该用户
         if (!order.getUserId().equals(userId)) {
             throw new TomatoMallException("无权访问该订单");
@@ -217,6 +228,7 @@ public class OrderServiceImpl implements OrderService {
 
     @Override
     public void handleAlipayNotify(HttpServletRequest request) {
+        System.out.println("收到回调通知");
         try {
             // 1. 解析参数并验证签名
             Map<String, String> params = alipayUtil.parseAlipayParams(request);
@@ -227,12 +239,33 @@ public class OrderServiceImpl implements OrderService {
 
             // 2. 处理支付成功逻辑
             if ("TRADE_SUCCESS".equals(params.get("trade_status"))) {
-                String orderId = params.get("out_trade_no");
+                String orderIdStr = params.get("out_trade_no");
                 String alipayTradeNo = params.get("trade_no");
                 String amount = params.get("total_amount");
 
-                // 幂等性检查
-                Optional<Order> orderOpt = orderRepository.findById(Integer.valueOf(orderId));
+                // 先做支付流水幂等插入（以第三方交易号为幂等键）
+                if (alipayTradeNo != null && paymentRecordRepository.findByTradeNo(alipayTradeNo).isPresent()) {
+                    // 已处理该第三方流水，幂等返回
+                    return;
+                }
+
+                // 保存 payment record
+                try {
+                    PaymentRecord pr = new PaymentRecord();
+                    pr.setTradeNo(alipayTradeNo);
+                    pr.setOrderId(Integer.valueOf(orderIdStr));
+                    pr.setAmount(new BigDecimal(amount));
+                    pr.setRawNotify(params.toString());
+                    pr.setStatus("SUCCESS");
+                    paymentRecordRepository.save(pr);
+                    System.out.println("[DEBUG] paymentRecord saved: tradeNo=" + alipayTradeNo + " orderId=" + orderIdStr + " amount=" + amount);
+                } catch (Exception ex) {
+                    // 若写入 payment record 失败则记录并继续（不要阻塞回调）
+                    System.out.println("payment record save failed: " + ex.getMessage());
+                }
+
+                // 幂等性检查：读取订单并判断状态
+                Optional<Order> orderOpt = orderRepository.findById(Integer.valueOf(orderIdStr));
                 if (!orderOpt.isPresent()) {
                     throw TomatoMallException.orderNotFound();
                 }
@@ -242,16 +275,35 @@ public class OrderServiceImpl implements OrderService {
                 }
 
                 // 更新订单状态
+                System.out.println("[DEBUG] updating order status to SUCCESS for orderId=" + order.getOrderId());
                 order.setStatus(OrderStatus.SUCCESS.getCode());
                 System.out.println("amount: " + amount);
                 order.setTotalAmount(new BigDecimal(amount));
                 orderRepository.save(order);
+                System.out.println("[DEBUG] order updated to SUCCESS: orderId=" + order.getOrderId() + " amount=" + order.getTotalAmount());
 
                 // 更新销量并检查是否需要创建论坛
                 updateProductSalesAndCheckForum(order.getOrderId());
 
                 // 扣减库存（需加锁）
                 reduceStockpile(order.getOrderId());
+
+                // 生产 Kafka 事件，通知下游（异步消费）
+                try {
+                    NotificationMessage nm = new NotificationMessage();
+                    nm.setType("ORDER_PAID");
+                    nm.setOrderId(order.getOrderId());
+                    nm.setTargetRole("MERCHANT");
+                    Map<String, Object> payload = new HashMap<>();
+                    payload.put("orderId", order.getOrderId());
+                    payload.put("amount", order.getTotalAmount() != null ? order.getTotalAmount().toString() : amount);
+                    nm.setPayload(payload);
+                    System.out.println("[DEBUG] about to send ORDER_PAID kafka event for orderId=" + order.getOrderId());
+                    kafkaProducerService.sendOrderEvent(nm);
+                    System.out.println("[DEBUG] kafka send invoked for orderId=" + order.getOrderId());
+                } catch (Exception ex) {
+                    System.out.println("kafka send failed: " + ex.getMessage());
+                }
             }
         } catch (AlipayApiException e) {
             throw new TomatoMallException("支付宝回调处理异常");

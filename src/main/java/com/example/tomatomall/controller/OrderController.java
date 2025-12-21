@@ -68,6 +68,7 @@ public class OrderController {
 
     @GetMapping("/returnUrl")
     public void returnUrl(HttpServletRequest request, HttpServletResponse response) throws IOException {
+        System.out.println("收到return_url");
         // 同步回跳：后端中转，携带核心参数跳转到前端支付结果页
         String outTradeNo = request.getParameter("out_trade_no");
         String tradeNo = request.getParameter("trade_no");

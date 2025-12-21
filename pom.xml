@@ -61,6 +61,16 @@
             <artifactId>alipay-sdk-java</artifactId>
             <version>4.31.56.ALL</version>
         </dependency>
+        <!-- Kafka support -->
+        <dependency>
+            <groupId>org.springframework.kafka</groupId>
+            <artifactId>spring-kafka</artifactId>
+        </dependency>
+        <!-- WebSocket / STOMP support -->
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-websocket</artifactId>
+        </dependency>
     </dependencies>
 
     <dependencyManagement>

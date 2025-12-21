@@ -108,6 +108,11 @@ public class LoginInterceptor implements HandlerInterceptor
             return true;
         }
 
+        // Allow WebSocket / SockJS handshake paths (e.g. /ws, /ws/info, /api/ws/info)
+        if (lowerPath.contains("/ws")) {
+            return true;
+        }
+
         // 论坛列表接口：GET /api/forums（不包括论坛详情 /api/forums/{id}）
         if ("GET".equalsIgnoreCase(method) && "/api/forums".equals(path)) {
             return true;
