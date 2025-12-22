@@ -44,23 +44,25 @@ public class NotificationServiceImpl implements NotificationService {
             n.setPayload(payloadStr);
             n.setStatus("SENT");
             System.out.println("[DEBUG] persisting notification payload: " + payloadStr);
-            notificationRepository.save(n);
-            System.out.println("[DEBUG] notification persisted (approx) for type=" + msg.getType());
+            // persist notification and use saved entity as WS payload (includes id/type/status/timestamps)
+            Notification saved = notificationRepository.save(n);
+            System.out.println("[DEBUG] notification persisted (id=" + saved.getId() + ", type=" + saved.getType() + ")");
 
-            // send via websocket to relevant destination
+            // send via websocket the saved notification JSON so frontend receives DB-standard fields
             try {
-                String payloadJson = payloadStr;
-                System.out.println("[DEBUG] ws push targetRole=" + msg.getTargetRole() + " targetUserId=" + msg.getTargetUserId() + " payload=" + payloadJson);
+                String notificationStr = objectMapper.writeValueAsString(saved);
+                System.out.println("[DEBUG] ws push targetRole=" + msg.getTargetRole() + " targetUserId=" + msg.getTargetUserId()
+                    + " payload=" + payloadStr);
                 if (msg.getTargetUserId() != null) {
                     // user-specific destination
                     simpMessagingTemplate.convertAndSendToUser(
-                        String.valueOf(msg.getTargetUserId()), "/queue/notifications", payloadJson);
+                        String.valueOf(msg.getTargetUserId()), "/queue/notifications", notificationStr);
                     System.out.println("[DEBUG] ws push succeeded for user=" + msg.getTargetUserId());
                 } else if ("MERCHANT".equalsIgnoreCase(msg.getTargetRole())) {
-                    simpMessagingTemplate.convertAndSend("/topic/merchant/notifications", payloadJson);
+                    simpMessagingTemplate.convertAndSend("/topic/merchant/notifications", notificationStr);
                     System.out.println("[DEBUG] ws push succeeded for merchant topic");
                 } else {
-                    simpMessagingTemplate.convertAndSend("/topic/notifications", payloadJson);
+                    simpMessagingTemplate.convertAndSend("/topic/notifications", notificationStr);
                     System.out.println("[DEBUG] ws push succeeded for general topic");
                 }
             } catch (Exception ex) {
