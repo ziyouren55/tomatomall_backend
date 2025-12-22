@@ -28,6 +28,11 @@ import com.example.tomatomall.kafka.KafkaProducerService;
 import com.example.tomatomall.kafka.NotificationMessage;
 import java.util.HashMap;
 import java.util.Map;
+import com.example.tomatomall.po.Shipment;
+import com.example.tomatomall.repository.ShipmentRepository;
+import com.example.tomatomall.vo.shopping.ShipRequestVO;
+import org.springframework.transaction.annotation.Transactional;
+import java.sql.Timestamp;
 
 @Service
 public class OrderServiceImpl implements OrderService {
@@ -91,7 +96,10 @@ public class OrderServiceImpl implements OrderService {
 
     @Autowired
     KafkaProducerService kafkaProducerService;
-    
+
+    @Autowired
+    ShipmentRepository shipmentRepository;
+
     @Autowired
     StoreRepository storeRepository;
 
@@ -457,6 +465,261 @@ public class OrderServiceImpl implements OrderService {
             Integer quantity = item.getQuantity();
                 // 更新销量并检查是否需要创建论坛
                 forumService.incrementSalesAndCheckForum(productId, quantity);
+        }
+    }
+
+    @Override
+    public List<OrderVO> getPendingOrdersForMerchant(Integer merchantId) {
+        // 查询所有状态为 PAID 或 SUCCESS 的订单，然后筛选出包含该商家商品的订单
+        List<Order> candidates = orderRepository.findAll().stream()
+                .filter(o -> OrderStatus.PAID.getCode().equals(o.getStatus()) || OrderStatus.SUCCESS.getCode().equals(o.getStatus()))
+                .collect(Collectors.toList());
+
+        List<OrderVO> result = new ArrayList<>();
+        for (Order o : candidates) {
+            List<OrderItem> items = orderItemRepository.findByOrderIdAndMerchantId(o.getOrderId(), merchantId);
+            boolean belongs = items != null && !items.isEmpty();
+            if (!belongs) {
+                // 退回到更宽松的检查：遍历 order items 并判断 product->store->merchant
+                List<OrderItem> allItems = orderItemRepository.findByOrderId(o.getOrderId());
+                for (OrderItem oi : allItems) {
+                    if (oi.getStoreId() != null) {
+                        Optional<Store> sOpt = storeRepository.findById(oi.getStoreId());
+                        if (sOpt.isPresent() && sOpt.get().getMerchantId() != null && sOpt.get().getMerchantId().equals(merchantId)) {
+                            belongs = true;
+                            break;
+                        }
+                    } else if (oi.getMerchantId() != null && oi.getMerchantId().equals(merchantId)) {
+                        belongs = true;
+                        break;
+                    } else {
+                        Optional<Product> pOpt = productRepository.findById(oi.getProductId());
+                        if (pOpt.isPresent()) {
+                            Integer sId = pOpt.get().getStoreId();
+                            if (sId != null) {
+                                Optional<Store> s2 = storeRepository.findById(sId);
+                                if (s2.isPresent() && s2.get().getMerchantId() != null && s2.get().getMerchantId().equals(merchantId)) {
+                                    belongs = true;
+                                    break;
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+
+            if (belongs) {
+                OrderVO vo = enrichOrderVO(o);
+                result.add(vo);
+            }
+        }
+        // 可选：按创建时间降序
+        result.sort(ORDER_COMPARATOR);
+        return result;
+    }
+
+    @Override
+    public List<OrderVO> getProcessedOrdersForMerchant(Integer merchantId) {
+        // 已处理包括已发货（DELIVERED）和已完成（COMPLETED）
+        List<Order> candidates = orderRepository.findAll().stream()
+                .filter(o -> OrderStatus.DELIVERED.getCode().equals(o.getStatus()) || OrderStatus.COMPLETED.getCode().equals(o.getStatus()))
+                .collect(Collectors.toList());
+
+        List<OrderVO> result = new ArrayList<>();
+        for (Order o : candidates) {
+            List<OrderItem> items = orderItemRepository.findByOrderIdAndMerchantId(o.getOrderId(), merchantId);
+            boolean belongs = items != null && !items.isEmpty();
+            if (!belongs) {
+                List<OrderItem> allItems = orderItemRepository.findByOrderId(o.getOrderId());
+                for (OrderItem oi : allItems) {
+                    if (oi.getStoreId() != null) {
+                        Optional<Store> sOpt = storeRepository.findById(oi.getStoreId());
+                        if (sOpt.isPresent() && sOpt.get().getMerchantId() != null && sOpt.get().getMerchantId().equals(merchantId)) {
+                            belongs = true;
+                            break;
+                        }
+                    } else if (oi.getMerchantId() != null && oi.getMerchantId().equals(merchantId)) {
+                        belongs = true;
+                        break;
+                    } else {
+                        Optional<Product> pOpt = productRepository.findById(oi.getProductId());
+                        if (pOpt.isPresent()) {
+                            Integer sId = pOpt.get().getStoreId();
+                            if (sId != null) {
+                                Optional<Store> s2 = storeRepository.findById(sId);
+                                if (s2.isPresent() && s2.get().getMerchantId() != null && s2.get().getMerchantId().equals(merchantId)) {
+                                    belongs = true;
+                                    break;
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+
+            if (belongs) {
+                OrderVO vo = enrichOrderVO(o);
+                result.add(vo);
+            }
+        }
+        result.sort(ORDER_COMPARATOR);
+        return result;
+    }
+
+    @Override
+    @Transactional
+    public Shipment shipOrderForMerchant(Integer orderId, Integer merchantId, ShipRequestVO dto) {
+        // 1. 验证订单存在并属于该商家（复用已有逻辑）
+        Optional<Order> orderOpt = orderRepository.findById(orderId);
+        if (!orderOpt.isPresent()) {
+            throw TomatoMallException.orderNotFound();
+        }
+        Order order = orderOpt.get();
+
+        // 检查该商家在该订单里面是否有明细
+        List<OrderItem> myItems = orderItemRepository.findByOrderIdAndMerchantId(orderId, merchantId);
+        if ((myItems == null || myItems.isEmpty())) {
+            // 兼容走 product->store 逻辑
+            List<OrderItem> allItems = orderItemRepository.findByOrderId(orderId);
+            boolean belongs = false;
+            for (OrderItem oi : allItems) {
+                if (oi.getStoreId() != null) {
+                    Optional<Store> sOpt = storeRepository.findById(oi.getStoreId());
+                    if (sOpt.isPresent() && sOpt.get().getMerchantId() != null && sOpt.get().getMerchantId().equals(merchantId)) {
+                        belongs = true;
+                        break;
+                    }
+                } else if (oi.getMerchantId() != null && oi.getMerchantId().equals(merchantId)) {
+                    belongs = true;
+                    break;
+                } else {
+                    // check product->store last resort
+                    Optional<Product> pOpt = productRepository.findById(oi.getProductId());
+                    if (pOpt.isPresent()) {
+                        Integer sId = pOpt.get().getStoreId();
+                        if (sId != null) {
+                            Optional<Store> s2 = storeRepository.findById(sId);
+                            if (s2.isPresent() && s2.get().getMerchantId() != null && s2.get().getMerchantId().equals(merchantId)) {
+                                belongs = true;
+                                break;
+                            }
+                        }
+                    }
+                }
+            }
+            if (!belongs) {
+                throw TomatoMallException.permissionDenied();
+            }
+        }
+
+        // 2. 状态校验
+        if (!OrderStatus.SUCCESS.getCode().equals(order.getStatus()) && !OrderStatus.PAID.getCode().equals(order.getStatus())) {
+            throw new TomatoMallException("订单当前状态不能发货");
+        }
+
+        // 3. 幂等检查：是否已经有 shipment
+        Optional<Shipment> existShip = shipmentRepository.findByOrderId(orderId);
+        if (existShip.isPresent()) {
+            // 已经发货，直接返回（幂等）
+            return existShip.get();
+        }
+
+        // 4. 创建 shipment
+        Shipment s = new Shipment();
+        s.setOrderId(orderId);
+        s.setMerchantId(merchantId);
+        s.setCarrier(dto.getCarrier());
+        s.setTrackingNo(dto.getTrackingNo());
+        Timestamp now = new Timestamp(System.currentTimeMillis());
+        s.setShippedAt(now);
+        s.setCreatedAt(now);
+        shipmentRepository.save(s);
+
+        // 5. 更新订单状态为 DELIVERED
+        order.setStatus(OrderStatus.DELIVERED.getCode());
+        orderRepository.save(order);
+
+        // 6. 发送 kafka 通知给买家（和现有通知体系一致）
+        try {
+            NotificationMessage nm = new NotificationMessage();
+            nm.setType("ORDER_SHIPPED");
+            nm.setOrderId(orderId);
+            nm.setTargetRole("USER");
+            nm.setTargetUserId(order.getUserId());
+            Map<String, Object> payload = new HashMap<>();
+            payload.put("orderId", orderId);
+            payload.put("carrier", dto.getCarrier());
+            payload.put("trackingNo", dto.getTrackingNo());
+            nm.setPayload(payload);
+            kafkaProducerService.sendOrderEvent(nm);
+        } catch (Exception ex) {
+            System.out.println("kafka send ORDER_SHIPPED failed: " + ex.getMessage());
+        }
+
+        return s;
+    }
+
+    @Override
+    @Transactional
+    public void confirmReceipt(Integer orderId, Integer userId) {
+        // validate order exists
+        Optional<Order> orderOpt = orderRepository.findById(orderId);
+        if (!orderOpt.isPresent()) {
+            throw TomatoMallException.orderNotFound();
+        }
+        Order order = orderOpt.get();
+
+        // validate ownership
+        if (!order.getUserId().equals(userId)) {
+            throw TomatoMallException.permissionDenied();
+        }
+
+        // only allow if current status is DELIVERED (已发货/待收货)
+        if (!OrderStatus.DELIVERED.getCode().equals(order.getStatus())) {
+            throw new TomatoMallException("只有已发货的订单可以确认收货");
+        }
+
+        // update status to COMPLETED
+        order.setStatus(OrderStatus.COMPLETED.getCode());
+        orderRepository.save(order);
+
+        // notify merchant(s) that order has been completed
+        try {
+            List<OrderItem> orderItems = orderItemRepository.findByOrderId(orderId);
+            Map<Integer, Map<String, Object>> merchantPayloads = new HashMap<>();
+            for (OrderItem oi : orderItems) {
+                Integer productId = oi.getProductId();
+                productRepository.findById(productId).ifPresent(product -> {
+                    Integer storeId = product.getStoreId();
+                    if (storeId != null) {
+                        storeRepository.findById(storeId).ifPresent(store -> {
+                            Integer merchantId = store.getMerchantId();
+                            if (merchantId != null) {
+                                Map<String, Object> payload = merchantPayloads.getOrDefault(merchantId, new HashMap<>());
+                                payload.put("orderId", order.getOrderId());
+                                payload.put("amount", order.getTotalAmount() != null ? order.getTotalAmount().toString() : null);
+                                payload.put("storeId", store.getId());
+                                payload.put("merchantId", merchantId);
+                                merchantPayloads.put(merchantId, payload);
+                            }
+                        });
+                    }
+                });
+            }
+
+            for (Map.Entry<Integer, Map<String, Object>> e : merchantPayloads.entrySet()) {
+                Integer merchantId = e.getKey();
+                Map<String, Object> payload = e.getValue();
+                NotificationMessage nm = new NotificationMessage();
+                nm.setType("ORDER_COMPLETED");
+                nm.setOrderId(order.getOrderId());
+                nm.setTargetRole("MERCHANT");
+                nm.setTargetUserId(merchantId);
+                nm.setPayload(payload);
+                kafkaProducerService.sendOrderEvent(nm);
+            }
+        } catch (Exception ex) {
+            System.out.println("kafka send ORDER_COMPLETED failed: " + ex.getMessage());
         }
     }
 

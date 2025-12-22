@@ -2,7 +2,7 @@ package com.example.tomatomall.controller;
 
 import com.alipay.api.AlipayApiException;
 import com.example.tomatomall.service.OrderService;
-import com.example.tomatomall.vo.shopping.OrderVO;
+import com.example.tomatomall.vo.shopping.ShipRequestVO;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.web.bind.annotation.*;
@@ -12,7 +12,6 @@ import org.springframework.web.bind.annotation.RestController;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import java.io.IOException;
-import java.util.List;
 
 @RestController
 @RequestMapping("/api/orders")
@@ -49,11 +48,48 @@ public class OrderController {
     }
 
     /**
+     * 商家：标记订单为已发货
+     */
+    @PostMapping("/merchant/{orderId}/ship")
+    public Response shipOrderForMerchant(@PathVariable Integer orderId,
+                                        @RequestBody ShipRequestVO body,
+                                        @RequestAttribute("userId") Integer userId) {
+        com.example.tomatomall.po.Shipment shipment = orderService.shipOrderForMerchant(orderId, userId, body);
+        return Response.buildSuccess(shipment);
+    }
+
+    /**
+     * 商家：获取待发货订单列表（状态为 PAID 或 SUCCESS）
+     */
+    @GetMapping("/merchant/pending")
+    public Response getPendingOrdersForMerchant(@RequestAttribute("userId") Integer userId) {
+        return Response.buildSuccess(orderService.getPendingOrdersForMerchant(userId));
+    }
+
+    /**
+     * 商家：获取已处理订单（已发货 / 已完成）
+     */
+    @GetMapping("/merchant/processed")
+    public Response getProcessedOrdersForMerchant(@RequestAttribute("userId") Integer userId) {
+        return Response.buildSuccess(orderService.getProcessedOrdersForMerchant(userId));
+    }
+
+    /**
      * 获取当前用户的订单列表
      */
     @GetMapping("/my")
     public Response getMyOrders(@RequestAttribute("userId") Integer userId) {
         return Response.buildSuccess(orderService.getOrdersByUserId(userId));
+    }
+
+    /**
+     * 用户确认收货
+     */
+    @PostMapping("/{orderId}/confirmReceipt")
+    public Response confirmReceipt(@PathVariable Integer orderId,
+                                   @RequestAttribute("userId") Integer userId) {
+        orderService.confirmReceipt(orderId, userId);
+        return Response.buildSuccess("确认收货成功");
     }
 
     @PostMapping("/{orderId}/pay")

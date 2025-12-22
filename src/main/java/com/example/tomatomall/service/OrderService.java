@@ -1,7 +1,9 @@
 package com.example.tomatomall.service;
 
+import com.example.tomatomall.po.Shipment;
 import com.example.tomatomall.vo.shopping.OrderVO;
 import com.example.tomatomall.vo.shopping.PaymentResponseVO;
+import com.example.tomatomall.vo.shopping.ShipRequestVO;
 
 import javax.servlet.http.HttpServletRequest;
 import java.util.List;
@@ -35,5 +37,33 @@ public interface OrderService {
      * @param orderId 订单ID
      * @param merchantId 商家ID（当前登录用户ID）
      */
-    com.example.tomatomall.vo.shopping.OrderVO getOrderForMerchant(Integer orderId, Integer merchantId);
+    OrderVO getOrderForMerchant(Integer orderId, Integer merchantId);
+
+    /**
+     * 商家操作：标记订单为已发货（创建 shipment 记录并更新订单状态）
+     * @param orderId 订单ID
+     * @param merchantId 商家ID
+     * @param dto 发货信息（承运商与运单号）
+     * @return 已创建的 Shipment 记录
+     */
+    Shipment shipOrderForMerchant(Integer orderId, Integer merchantId, ShipRequestVO dto);
+
+    /**
+     * 获取当前商家需要处理的、待发货的订单列表（状态为 PAID 或 SUCCESS）
+     * @param merchantId 商家ID（从上下文获取）
+     */
+    List<OrderVO> getPendingOrdersForMerchant(Integer merchantId);
+    
+    /**
+     * 获取当前商家已处理的、已发货或已完成的订单列表
+     * @param merchantId 商家ID
+     */
+    List<OrderVO> getProcessedOrdersForMerchant(Integer merchantId);
+
+    /**
+     * 用户确认收货：将订单状态从 DELIVERED -> COMPLETED，并通知商家
+     * @param orderId 订单ID
+     * @param userId 当前用户ID（买家）
+     */
+    void confirmReceipt(Integer orderId, Integer userId);
 }
