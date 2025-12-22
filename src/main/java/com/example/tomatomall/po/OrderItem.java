@@ -45,5 +45,11 @@ public class OrderItem {
     @Column(name = "subtotal",
             columnDefinition = "DECIMAL(10,2) COMMENT '小计 = price * quantity'")
     private BigDecimal subtotal;
+
+    @Column(name = "store_id", columnDefinition = "INT")
+    private Integer storeId;
+
+    @Column(name = "merchant_id", columnDefinition = "INT")
+    private Integer merchantId;
 }
 

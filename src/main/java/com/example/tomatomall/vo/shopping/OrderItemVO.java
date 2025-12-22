@@ -17,5 +17,9 @@ public class OrderItemVO {
     private BigDecimal price;
     private Integer quantity;
     private BigDecimal subtotal;
+    private Integer storeId;
+    private Integer merchantId;
+    private String storeName;
+    private String merchantName;
 }
 

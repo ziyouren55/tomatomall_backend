@@ -41,6 +41,9 @@ public class CartServiceImpl implements CartService {
 
     @Autowired
     OrderItemRepository orderItemRepository;
+    
+    @Autowired
+    private StoreRepository storeRepository;
 
     @Override
     public CartItemVO addProductToCart(CartItemVO cartItemVO, Integer userId) {
@@ -236,6 +239,14 @@ public class CartServiceImpl implements CartService {
             oi.setPrice(price);
             oi.setQuantity(cartItem.getQuantity());
             oi.setSubtotal(price.multiply(BigDecimal.valueOf(cartItem.getQuantity())));
+            // fill store/merchant snapshot for faster merchant queries and history retention
+            Integer storeId = product.getStoreId();
+            oi.setStoreId(storeId);
+            if (storeId != null) {
+                storeRepository.findById(storeId).ifPresent(store -> {
+                    oi.setMerchantId(store.getMerchantId());
+                });
+            }
             orderItems.add(oi);
         }
         orderItemRepository.saveAll(orderItems);

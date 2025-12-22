@@ -29,4 +29,11 @@ public interface OrderService {
     void handleAlipayNotify(HttpServletRequest request);
 
     void reduceStockpile(Integer orderId);
+
+    /**
+     * 商家视图：获取属于该商家的订单明细（只返回该商家相关的 order items 以及必要的订单头信息）
+     * @param orderId 订单ID
+     * @param merchantId 商家ID（当前登录用户ID）
+     */
+    com.example.tomatomall.vo.shopping.OrderVO getOrderForMerchant(Integer orderId, Integer merchantId);
 }

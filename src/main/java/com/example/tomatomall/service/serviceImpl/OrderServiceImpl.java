@@ -170,6 +170,17 @@ public class OrderServiceImpl implements OrderService {
         for (OrderItem oi : orderItems) {
             OrderItemVO vo = new OrderItemVO();
             BeanUtils.copyProperties(oi, vo);
+            // populate store/merchant names on VO (do not rely on entity storing names)
+            if (oi.getStoreId() != null) {
+                storeRepository.findById(oi.getStoreId()).ifPresent(store -> {
+                    vo.setStoreName(store.getName());
+                    if (store.getMerchantId() != null) {
+                        accountRepository.findById(store.getMerchantId()).ifPresent(acc -> vo.setMerchantName(acc.getName()));
+                    }
+                });
+            } else if (oi.getMerchantId() != null) {
+                accountRepository.findById(oi.getMerchantId()).ifPresent(acc -> vo.setMerchantName(acc.getName()));
+            }
             itemVOs.add(vo);
                 }
         orderVO.setOrderItems(itemVOs);
@@ -197,10 +208,81 @@ public class OrderServiceImpl implements OrderService {
         for (OrderItem oi : orderItems) {
             OrderItemVO vo = new OrderItemVO();
             BeanUtils.copyProperties(oi, vo);
+            // populate store/merchant names on VO
+            if (oi.getStoreId() != null) {
+                storeRepository.findById(oi.getStoreId()).ifPresent(store -> {
+                    vo.setStoreName(store.getName());
+                    if (store.getMerchantId() != null) {
+                        accountRepository.findById(store.getMerchantId()).ifPresent(acc -> vo.setMerchantName(acc.getName()));
+                    }
+                });
+            } else if (oi.getMerchantId() != null) {
+                accountRepository.findById(oi.getMerchantId()).ifPresent(acc -> vo.setMerchantName(acc.getName()));
+            }
             itemVOs.add(vo);
                 }
         orderVO.setOrderItems(itemVOs);
         return orderVO;
+    }
+
+    @Override
+    public OrderVO getOrderForMerchant(Integer orderId, Integer merchantId) {
+        Optional<Order> orderOpt = orderRepository.findById(orderId);
+        if (!orderOpt.isPresent()) {
+            throw TomatoMallException.orderNotFound();
+        }
+        Order order = orderOpt.get();
+
+        // 查询只属于该商家的订单明细（使用去规范化的 merchant_id）
+        List<OrderItem> myItems = orderItemRepository.findByOrderIdAndMerchantId(orderId, merchantId);
+        if (myItems == null || myItems.isEmpty()) {
+            // 兼容：若没有 merchant_id 填充历史记录，则回退到通过 product->store 判断
+            List<OrderItem> allItems = orderItemRepository.findByOrderId(orderId);
+            for (OrderItem oi : allItems) {
+                if (oi.getStoreId() != null) {
+                    storeRepository.findById(oi.getStoreId()).ifPresent(store -> {
+                        if (store.getMerchantId() != null && store.getMerchantId().equals(merchantId)) {
+                            myItems.add(oi);
+                        }
+                    });
+                } else {
+                    // last resort: check product->store
+                    productRepository.findById(oi.getProductId()).ifPresent(product -> {
+                        Integer sId = product.getStoreId();
+                        if (sId != null) {
+                            storeRepository.findById(sId).ifPresent(store -> {
+                                if (store.getMerchantId() != null && store.getMerchantId().equals(merchantId)) {
+                                    myItems.add(oi);
+                                }
+                            });
+                        }
+                    });
+                }
+            }
+        }
+
+        if (myItems.isEmpty()) {
+            throw TomatoMallException.permissionDenied();
+        }
+
+        // 构造返回 VO，只包含该商家的明细
+        OrderVO vo = order.toVO();
+        // 填写买家基础信息（可按需裁剪）
+        Optional<Account> account = accountRepository.findById(order.getUserId());
+        account.ifPresent(a -> {
+            vo.setName(a.getName());
+            vo.setPhone(a.getTelephone());
+            vo.setAddress(a.getUsername());
+        });
+
+        List<OrderItemVO> itemVOs = new ArrayList<>();
+        for (OrderItem oi : myItems) {
+            OrderItemVO ivo = new OrderItemVO();
+            BeanUtils.copyProperties(oi, ivo);
+            itemVOs.add(ivo);
+        }
+        vo.setOrderItems(itemVOs);
+        return vo;
     }
 
     @Override
@@ -308,6 +390,8 @@ public class OrderServiceImpl implements OrderService {
                                         Map<String, Object> payload = merchantPayloads.getOrDefault(merchantId, new HashMap<>());
                                         payload.put("orderId", order.getOrderId());
                                         payload.put("amount", order.getTotalAmount() != null ? order.getTotalAmount().toString() : amount);
+                                        payload.put("storeId", store.getId());
+                                        payload.put("merchantId", merchantId);
                                         merchantPayloads.put(merchantId, payload);
                                     }
                                 });

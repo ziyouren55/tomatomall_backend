@@ -40,6 +40,15 @@ public class OrderController {
     }
 
     /**
+     * 商家视图：获取某订单中属于当前商家的明细（仅商家可访问）
+     */
+    @GetMapping("/merchant/{orderId}")
+    public Response getOrderForMerchant(@PathVariable Integer orderId,
+                                        @RequestAttribute("userId") Integer userId) {
+        return Response.buildSuccess(orderService.getOrderForMerchant(orderId, userId));
+    }
+
+    /**
      * 获取当前用户的订单列表
      */
     @GetMapping("/my")
