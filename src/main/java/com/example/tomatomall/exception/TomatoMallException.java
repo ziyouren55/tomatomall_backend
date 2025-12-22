@@ -76,4 +76,8 @@ public class TomatoMallException extends RuntimeException{
     {
         return new TomatoMallException("权限不足，无法执行此操作!");
     }
+    
+    public static TomatoMallException notificationNotFind() {
+        return new TomatoMallException("消息不存在");
+    }
 }

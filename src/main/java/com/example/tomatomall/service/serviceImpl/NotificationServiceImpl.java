@@ -10,6 +10,11 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.HashMap;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import com.example.tomatomall.vo.PageResultVO;
+import java.util.List;
+import java.util.Optional;
 
 @Service
 public class NotificationServiceImpl implements NotificationService {
@@ -74,6 +79,61 @@ public class NotificationServiceImpl implements NotificationService {
                 System.out.println("failed to persist failed-notification: " + ex.getMessage());
             }
         }
+    }
+
+    @Override
+    public long countUnreadByUserId(Integer userId) {
+        if (userId == null) return 0L;
+        return notificationRepository.countByTargetUserIdAndReadFlagFalse(userId);
+    }
+
+    @Override
+    public PageResultVO<Notification> getNotificationsByUserId(Integer userId, Integer page, Integer pageSize) {
+        if (userId == null) return new PageResultVO<>(List.of(), 0L, page == null ? 0 : page, pageSize == null ? 20 : pageSize);
+        if (page == null || page < 0) page = 0;
+        if (pageSize == null || pageSize <= 0) pageSize = 20;
+        Page<Notification> p = notificationRepository.findByTargetUserIdOrderByCreatedAtDesc(userId, PageRequest.of(page, pageSize));
+        return new PageResultVO<>(p.getContent(), p.getTotalElements(), page, pageSize);
+    }
+
+    @Override
+    public Optional<Notification> getNotificationDetailForUser(Long id, Integer userId) {
+        if (userId == null) return Optional.empty();
+        return notificationRepository.findByIdAndTargetUserId(id, userId);
+    }
+
+    @Override
+    @Transactional
+    public int markReadByUserId(Integer userId, List<Long> ids) {
+        if (userId == null || ids == null || ids.isEmpty()) return 0;
+        return notificationRepository.markReadByUserAndIds(userId, ids);
+    }
+
+    @Override
+    @Transactional
+    public int markAllReadByUserId(Integer userId) {
+        if (userId == null) return 0;
+        return notificationRepository.markAllReadByUser(userId);
+    }
+
+    @Override
+    @Transactional
+    public int deleteByUserId(Integer userId, List<Long> ids) {
+        if (userId == null || ids == null || ids.isEmpty()) return 0;
+        return notificationRepository.deleteByUserAndIds(userId, ids);
+    }
+
+    @Override
+    @Transactional
+    public int deleteAllByUserId(Integer userId) {
+        if (userId == null) return 0;
+        return notificationRepository.deleteAllByUser(userId);
+    }
+
+    @Override
+    @Transactional
+    public Notification createNotification(Notification notification) {
+        return notificationRepository.save(notification);
     }
 }
 

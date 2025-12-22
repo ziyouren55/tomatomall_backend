@@ -91,6 +91,9 @@ public class OrderServiceImpl implements OrderService {
 
     @Autowired
     KafkaProducerService kafkaProducerService;
+    
+    @Autowired
+    StoreRepository storeRepository;
 
     @Override
     public List<OrderVO> getAllOrders() {
@@ -290,16 +293,41 @@ public class OrderServiceImpl implements OrderService {
 
                 // 生产 Kafka 事件，通知下游（异步消费）
                 try {
-                    NotificationMessage nm = new NotificationMessage();
-                    nm.setType("ORDER_PAID");
-                    nm.setOrderId(order.getOrderId());
-                    nm.setTargetRole("MERCHANT");
-                    Map<String, Object> payload = new HashMap<>();
-                    payload.put("orderId", order.getOrderId());
-                    payload.put("amount", order.getTotalAmount() != null ? order.getTotalAmount().toString() : amount);
-                    nm.setPayload(payload);
-                    System.out.println("[DEBUG] about to send ORDER_PAID kafka event for orderId=" + order.getOrderId());
-                    kafkaProducerService.sendOrderEvent(nm);
+                    // 根据订单明细确定对应的商家（通过商品->store->merchantId）
+                    List<OrderItem> orderItems = orderItemRepository.findByOrderId(order.getOrderId());
+                    Map<Integer, Map<String, Object>> merchantPayloads = new HashMap<>();
+                    for (OrderItem oi : orderItems) {
+                        Integer productId = oi.getProductId();
+                        productRepository.findById(productId).ifPresent(product -> {
+                            Integer storeId = product.getStoreId();
+                            if (storeId != null) {
+                                storeRepository.findById(storeId).ifPresent(store -> {
+                                    Integer merchantId = store.getMerchantId();
+                                    if (merchantId != null) {
+                                        // accumulate payload per merchant (simple: last one wins)
+                                        Map<String, Object> payload = merchantPayloads.getOrDefault(merchantId, new HashMap<>());
+                                        payload.put("orderId", order.getOrderId());
+                                        payload.put("amount", order.getTotalAmount() != null ? order.getTotalAmount().toString() : amount);
+                                        merchantPayloads.put(merchantId, payload);
+                                    }
+                                });
+                            }
+                        });
+                    }
+
+                    // 对每个商家发送一条通知消息（targetUserId = merchantId）
+                    for (Map.Entry<Integer, Map<String, Object>> e : merchantPayloads.entrySet()) {
+                        Integer merchantId = e.getKey();
+                        Map<String, Object> payload = e.getValue();
+                        NotificationMessage nm = new NotificationMessage();
+                        nm.setType("ORDER_PAID");
+                        nm.setOrderId(order.getOrderId());
+                        nm.setTargetRole("MERCHANT");
+                        nm.setTargetUserId(merchantId);
+                        nm.setPayload(payload);
+                        System.out.println("[DEBUG] about to send ORDER_PAID kafka event for orderId=" + order.getOrderId() + " merchant=" + merchantId);
+                        kafkaProducerService.sendOrderEvent(nm);
+                    }
                     System.out.println("[DEBUG] kafka send invoked for orderId=" + order.getOrderId());
                 } catch (Exception ex) {
                     System.out.println("kafka send failed: " + ex.getMessage());
