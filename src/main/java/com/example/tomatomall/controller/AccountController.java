@@ -1,8 +1,9 @@
 package com.example.tomatomall.controller;
 
-import com.example.tomatomall.exception.TomatoMallException;
 import com.example.tomatomall.service.AccountService;
+import com.example.tomatomall.service.SchoolVerificationService;
 import com.example.tomatomall.vo.accounts.AccountVO;
+import com.example.tomatomall.vo.accounts.SchoolVerificationVO;
 import com.example.tomatomall.vo.Response;
 import org.springframework.web.bind.annotation.*;
 
@@ -14,6 +15,9 @@ public class AccountController {
 
     @Resource
     AccountService accountService;
+
+    @Resource
+    SchoolVerificationService schoolVerificationService;
 
     /**
      * 获取用户详情
@@ -45,5 +49,21 @@ public class AccountController {
     @PostMapping("/login")
     public Response login(@RequestBody AccountVO accountVO) {
         return Response.buildSuccess(accountService.login(accountVO));
+    }
+
+    /**
+     * 提交学校认证（当前登录用户）
+     */
+    @PostMapping("/school-verification")
+    public Response submitSchoolVerification(@RequestBody SchoolVerificationVO vo) {
+        return Response.buildSuccess(schoolVerificationService.submit(vo));
+    }
+
+    /**
+     * 查询某用户的学校认证状态
+     */
+    @GetMapping("/{username}/school-verification")
+    public Response getSchoolVerification(@PathVariable("username") String username) {
+        return Response.buildSuccess(schoolVerificationService.getByUsername(username));
     }
 }

@@ -32,6 +32,10 @@ public class TomatoMallException extends RuntimeException{
         return new TomatoMallException("手机号或密码错误!");
     }
 
+    public static TomatoMallException paramError(){
+        return new TomatoMallException("参数错误");
+    }
+
     public static TomatoMallException storeAlreadyExists(){
         return new TomatoMallException("该商店已经存在!");
     }
