@@ -153,19 +153,32 @@ public class ChatServiceImpl implements ChatService {
         // 通过WebSocket推送消息
         ChatMessageVO messageVO = convertToMessageVO(savedMessage);
 
-        // 推送给接收方
-        simpMessagingTemplate.convertAndSendToUser(
-            String.valueOf(isCustomer ? session.getMerchantId() : session.getCustomerId()),
-            "/chat",
-            messageVO
-        );
+        String receiverUserId = String.valueOf(isCustomer ? session.getMerchantId() : session.getCustomerId());
+        String senderUserId = String.valueOf(senderId);
 
-        // 也推送给自己，确保发送方能看到自己的消息（替换临时消息）
-        simpMessagingTemplate.convertAndSendToUser(
-            String.valueOf(senderId),
-            "/chat",
-            messageVO
-        );
+        // 使用与通知功能一致的队列路径推送消息给接收方
+        try {
+            simpMessagingTemplate.convertAndSendToUser(
+                receiverUserId,
+                "/queue/chat",
+                messageVO
+            );
+            System.out.println("[CHAT WS] Sent to receiver: " + receiverUserId + " via /queue/chat");
+        } catch (Exception e) {
+            System.out.println("[CHAT WS] Failed to send to receiver " + receiverUserId + ": " + e.getMessage());
+        }
+
+        // 推送给自己，确保发送方能看到自己的消息
+        try {
+            simpMessagingTemplate.convertAndSendToUser(
+                senderUserId,
+                "/queue/chat",
+                messageVO
+            );
+            System.out.println("[CHAT WS] Sent to sender: " + senderUserId + " via /queue/chat");
+        } catch (Exception e) {
+            System.out.println("[CHAT WS] Failed to send to sender " + senderUserId + ": " + e.getMessage());
+        }
 
         return savedMessage;
     }

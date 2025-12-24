@@ -36,6 +36,9 @@ public class WebSocketConfig implements WebSocketMessageBrokerConfigurer {
         registry.enableSimpleBroker("/topic", "/queue");
         registry.setApplicationDestinationPrefixes("/app");
         registry.setUserDestinationPrefix("/user");
+
+        // 添加用户注册表以支持convertAndSendToUser
+        registry.setPreservePublishOrder(true);
     }
 }
 
