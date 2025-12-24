@@ -1,12 +1,9 @@
 package com.example.tomatomall.service;
 
-import com.example.tomatomall.po.Stockpile;
 import com.example.tomatomall.vo.PageResultVO;
 import com.example.tomatomall.vo.products.ProductVO;
 import com.example.tomatomall.vo.products.SearchResultVO;
 import com.example.tomatomall.vo.products.StockpileVO;
-
-import java.util.List;
 
 public interface ProductService
 {
@@ -31,6 +28,11 @@ public interface ProductService
     String updateProductStockpile(Integer productId, Integer amount);
 
     StockpileVO getProductStockpile(Integer productId);
+
+    /**
+     * 根据店铺ID分页获取该店铺的商品（公开接口可调用）
+     */
+    SearchResultVO getProductsByStore(Integer storeId, Integer page, Integer pageSize);
 
     /**
      * 管理端获取商品列表（商家管理页 / 管理员管理页）

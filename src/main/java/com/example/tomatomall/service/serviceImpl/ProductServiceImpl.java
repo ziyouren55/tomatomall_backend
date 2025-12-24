@@ -124,6 +124,22 @@ public class ProductServiceImpl implements ProductService {
     }
 
     @Override
+    public SearchResultVO getProductsByStore(Integer storeId, Integer page, Integer pageSize) {
+        // 参数验证和默认值
+        if (page == null || page < 0) page = 0;
+        if (pageSize == null || pageSize <= 0) pageSize = 20;
+        if (pageSize > 100) pageSize = 100;
+
+        Pageable pageable = PageRequest.of(page, pageSize, Sort.by(Sort.Direction.DESC, "id"));
+        Page<Product> productPage = productRepository.findByStoreId(storeId, pageable);
+        List<ProductVO> productVOs = productPage.getContent().stream()
+            .map(Product::toVO)
+            .collect(Collectors.toList());
+
+        return new SearchResultVO(productVOs, productPage.getTotalElements(), page, pageSize);
+    }
+
+    @Override
     public String updateProduct(ProductVO productVO) {
         Optional<Product> productOpt = productRepository.findById(productVO.getId());
         if (productOpt.isEmpty()) {

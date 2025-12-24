@@ -106,6 +106,16 @@ public class AccountServiceImpl implements AccountService {
     }
 
     @Override
+    public AccountVO getUserById(Integer id) {
+        Optional<Account> account = accountRepository.findById(id);
+        if (account.isPresent()) {
+            return account.get().toVO();
+        } else {
+            throw TomatoMallException.usernameNotFind();
+        }
+    }
+
+    @Override
     public AccountVO updateUser(AccountVO accountVO)
     {
         Optional<Account> opAccount = accountRepository.findByUsername(accountVO.getUsername());

@@ -2,8 +2,6 @@ package com.example.tomatomall.controller;
 
 
 import com.example.tomatomall.enums.UserRole;
-import com.example.tomatomall.repository.ProductRepository;
-import com.example.tomatomall.repository.StockpileRepository;
 import com.example.tomatomall.service.ProductService;
 import com.example.tomatomall.vo.products.SearchResultVO;
 import com.example.tomatomall.vo.PageResultVO;
@@ -19,8 +17,6 @@ import java.util.Map;
 @RequestMapping("/api/products")
 public class ProductController
 {
-    StockpileRepository stockpileRepository;
-
     @Resource
     ProductService productService;
 
@@ -114,6 +110,17 @@ public class ProductController
             @RequestParam(required = false) String sortOrder)
     {
         return Response.buildSuccess(productService.searchProducts(keyword, page, pageSize, sortBy, sortOrder));
+    }
+
+    /**
+     * 公开接口：根据店铺ID分页获取该店铺的商品（用于店铺或商家公开页展示）
+     */
+    @GetMapping("/store/{storeId}")
+    public Response<SearchResultVO> getProductsByStore(
+            @PathVariable Integer storeId,
+            @RequestParam(defaultValue = "0") Integer page,
+            @RequestParam(defaultValue = "20") Integer pageSize) {
+        return Response.buildSuccess(productService.getProductsByStore(storeId, page, pageSize));
     }
 
 }

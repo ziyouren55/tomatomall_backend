@@ -10,6 +10,8 @@ public interface AccountService {
 
     AccountVO getUser(String username);
 
+    AccountVO getUserById(Integer id);
+
     AccountVO updateUser(AccountVO accountVO);
 
 }

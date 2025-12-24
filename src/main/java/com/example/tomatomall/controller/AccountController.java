@@ -28,6 +28,14 @@ public class AccountController {
     }
 
     /**
+     * 根据用户ID获取用户详情（公开，用于前端根据 merchantId 跳转到用户名页面）
+     */
+    @GetMapping("/id/{id}")
+    public Response getUserById(@PathVariable("id") Integer id) {
+        return Response.buildSuccess(accountService.getUserById(id));
+    }
+
+    /**
      * 创建新的用户
      */
     @PostMapping()

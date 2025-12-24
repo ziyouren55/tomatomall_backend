@@ -11,6 +11,7 @@ import com.example.tomatomall.vo.Response;
 import org.springframework.web.bind.annotation.*;
 
 import javax.annotation.Resource;
+import java.util.List;
 
 @RestController
 @RequestMapping("/api/stores")
@@ -84,6 +85,15 @@ public class StoreController {
         // 调用 Service 层处理权限与删除
         storeService.deleteStoreByCurrentUser(id);
         return Response.buildSuccess("删除成功");
+    }
+
+    /**
+     * 公开接口：根据商家ID获取其所有店铺（用于公共展示）
+     * 不需要登录，返回该商家名下店铺列表
+     */
+    @GetMapping("/merchant/{merchantId}")
+    public Response<List<Store>> getStoresByMerchantId(@PathVariable Integer merchantId) {
+        return Response.buildSuccess(storeService.findStoresByMerchantId(merchantId));
     }
 }
 
