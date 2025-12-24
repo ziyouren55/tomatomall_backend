@@ -1,5 +1,6 @@
 package com.example.tomatomall.controller;
 
+import com.example.tomatomall.enums.BusinessError;
 import com.example.tomatomall.po.School;
 import com.example.tomatomall.repository.SchoolRepository;
 import com.example.tomatomall.vo.Response;
@@ -98,7 +99,7 @@ public class AdminLocationController {
                 }
             }
         } catch (Exception e) {
-            return Response.buildFailure("import_failed", "导入失败: " + e.getMessage());
+            return Response.buildFailure(BusinessError.IMPORT_FAILED.getCode(), "导入失败: " + e.getMessage());
         }
         java.util.Map<String, Object> res = new java.util.HashMap<>();
         res.put("success", success);

@@ -3,6 +3,7 @@ package com.example.tomatomall.service;
 import com.example.tomatomall.vo.PageResultVO;
 import com.example.tomatomall.vo.products.ProductVO;
 import com.example.tomatomall.vo.products.SearchResultVO;
+import com.example.tomatomall.vo.products.RecommendSearchResultVO;
 import com.example.tomatomall.vo.products.StockpileVO;
 
 public interface ProductService
@@ -61,5 +62,5 @@ public interface ProductService
     /**
      * 获取附近推荐（同校优先 -> 同城 -> 其他），要求用户已通过学校认证
      */
-    SearchResultVO getNearbyRecommendations(Integer page, Integer pageSize);
+    RecommendSearchResultVO getNearbyRecommendations(Integer page, Integer pageSize);
 }

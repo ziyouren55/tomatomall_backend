@@ -1,5 +1,6 @@
 package com.example.tomatomall.controller;
 
+import com.example.tomatomall.enums.BusinessError;
 import com.example.tomatomall.exception.TomatoMallException;
 import com.example.tomatomall.service.MemberService;
 import com.example.tomatomall.vo.Response;
@@ -31,7 +32,8 @@ public class MemberController {
 
         Map<String, Object> result = new HashMap<>();
         if (account == null) {
-            return Response.buildFailure("404", "用户不存在");
+            BusinessError error = BusinessError.USER_NOT_FOUND;
+            return Response.buildFailure(error.getCode(), error.getMessage());
         }
 
         boolean isMember = Boolean.TRUE.equals(account.getIsMember());

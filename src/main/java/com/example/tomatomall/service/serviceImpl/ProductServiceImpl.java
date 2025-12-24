@@ -13,6 +13,8 @@ import com.example.tomatomall.enums.UserRole;
 import com.example.tomatomall.vo.PageResultVO;
 import com.example.tomatomall.vo.products.ProductVO;
 import com.example.tomatomall.vo.products.SearchResultVO;
+import com.example.tomatomall.vo.products.RecommendProductVO;
+import com.example.tomatomall.vo.products.RecommendSearchResultVO;
 import com.example.tomatomall.vo.products.StockpileVO;
 import org.springframework.beans.BeanUtils;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -326,7 +328,7 @@ public class ProductServiceImpl implements ProductService {
     }
 
     @Override
-    public SearchResultVO getNearbyRecommendations(Integer page, Integer pageSize) {
+    public RecommendSearchResultVO getNearbyRecommendations(Integer page, Integer pageSize) {
         // 参数验证和默认值（与其它方法风格一致）
         if (page == null || page < 0) page = 0;
         if (pageSize == null || pageSize <= 0) pageSize = 20;
@@ -340,7 +342,7 @@ public class ProductServiceImpl implements ProductService {
         // 检查用户的学校认证
         Optional<SchoolVerification> mySvOpt = schoolVerificationRepository.findByUserId(currentUserId);
         if (mySvOpt.isEmpty() || mySvOpt.get().getStatus() == null || !"VERIFIED".equalsIgnoreCase(mySvOpt.get().getStatus())) {
-            throw new com.example.tomatomall.exception.TomatoMallException("SCHOOL_NOT_VERIFIED");
+            throw TomatoMallException.schoolNotVerified();
         }
         String mySchoolName = mySvOpt.get().getSchoolName();
 
@@ -384,7 +386,7 @@ public class ProductServiceImpl implements ProductService {
         }
 
         // 确保同校商家优先，若不足再补同城，再补其他
-        List<ProductVO> resultProducts = new java.util.ArrayList<>();
+        java.util.List<RecommendProductVO> resultProducts = new java.util.ArrayList<>();
         int remaining = pageSize;
 
         // Pageable not needed for custom prioritized queries
@@ -395,7 +397,10 @@ public class ProductServiceImpl implements ProductService {
             List<ProductVO> vos = p.getContent().stream().map(Product::toVO).collect(Collectors.toList());
             for (ProductVO vo : vos) {
                 if (remaining <= 0) break;
-                resultProducts.add(vo);
+                RecommendProductVO r = new RecommendProductVO();
+                r.setProduct(vo);
+                r.setPriority(com.example.tomatomall.enums.RecommendationPriority.SAME_SCHOOL);
+                resultProducts.add(r);
                 remaining--;
             }
         }
@@ -414,9 +419,12 @@ public class ProductServiceImpl implements ProductService {
                 for (ProductVO vo : vos2) {
                     if (remaining <= 0) break;
                     // 防止重复
-                    boolean exists = resultProducts.stream().anyMatch(rp -> rp.getId().equals(vo.getId()));
+                    boolean exists = resultProducts.stream().anyMatch(rp -> rp.getProduct().getId().equals(vo.getId()));
                     if (!exists) {
-                        resultProducts.add(vo);
+                        RecommendProductVO r = new RecommendProductVO();
+                        r.setProduct(vo);
+                        r.setPriority(com.example.tomatomall.enums.RecommendationPriority.SAME_CITY);
+                        resultProducts.add(r);
                         remaining--;
                     }
                 }
@@ -430,16 +438,19 @@ public class ProductServiceImpl implements ProductService {
             for (ProductVO vo : vos) {
                 if (remaining <= 0) break;
                 // 简单去重：避免加入重复 productId
-                boolean exists = resultProducts.stream().anyMatch(rp -> rp.getId().equals(vo.getId()));
+                boolean exists = resultProducts.stream().anyMatch(rp -> rp.getProduct().getId().equals(vo.getId()));
                 if (!exists) {
-                    resultProducts.add(vo);
+                    RecommendProductVO r = new RecommendProductVO();
+                    r.setProduct(vo);
+                    r.setPriority(com.example.tomatomall.enums.RecommendationPriority.OTHER);
+                    resultProducts.add(r);
                     remaining--;
                 }
             }
         }
 
         // 返回构建：注意 total 值这里仅为 resultProducts.size()
-        return new SearchResultVO(resultProducts, (long) resultProducts.size(), page, pageSize);
+        return new RecommendSearchResultVO(resultProducts, (long) resultProducts.size(), page, pageSize);
     }
 
     @Override

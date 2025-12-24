@@ -2,8 +2,11 @@ package com.example.tomatomall.controller;
 
 
 import com.example.tomatomall.enums.UserRole;
+import com.example.tomatomall.enums.BusinessError;
+import com.example.tomatomall.exception.TomatoMallException;
 import com.example.tomatomall.service.ProductService;
 import com.example.tomatomall.vo.products.SearchResultVO;
+import com.example.tomatomall.vo.products.RecommendSearchResultVO;
 import com.example.tomatomall.vo.PageResultVO;
 import com.example.tomatomall.vo.products.StockpileVO;
 import com.example.tomatomall.vo.products.ProductVO;
@@ -45,7 +48,7 @@ public class ProductController
             @RequestAttribute(value = "userRole", required = false) UserRole userRole) {
         // 仅在 Service 层处理权限与范围，Controller 仅负责路由和异常传递
         if (userRole == null) {
-            throw com.example.tomatomall.exception.TomatoMallException.notLogin();
+            throw TomatoMallException.notLogin();
         }
         return Response.buildSuccess(productService.getManageProductList(page, pageSize, sortBy, sortOrder));
     }
@@ -116,10 +119,25 @@ public class ProductController
      * 附近推荐：需要登录并且学校认证通过
      */
     @GetMapping("/recommend")
-    public Response<SearchResultVO> getNearbyRecommendations(
+    public Response<RecommendSearchResultVO> getNearbyRecommendations(
             @RequestParam(defaultValue = "0") Integer page,
             @RequestParam(defaultValue = "20") Integer pageSize) {
-        return Response.buildSuccess(productService.getNearbyRecommendations(page, pageSize));
+        try {
+            return Response.buildSuccess(productService.getNearbyRecommendations(page, pageSize));
+        } catch (TomatoMallException e) {
+            // 精确匹配异常消息
+            String errorMessage = e.getMessage();
+            if (errorMessage.equals(TomatoMallException.schoolNotVerified().getMessage())) {
+                BusinessError error = BusinessError.SCHOOL_NOT_VERIFIED;
+                return Response.buildFailure(error.getCode(), error.getCode());
+            }
+            if (errorMessage.equals(TomatoMallException.notLogin().getMessage())) {
+                BusinessError error = BusinessError.USER_NOT_LOGIN;
+                return Response.buildFailure(error.getCode(), error.getCode());
+            }
+            // 其他异常重新抛出
+            throw e;
+        }
     }
 
     /**
