@@ -28,11 +28,46 @@ public class AccountController {
     }
 
     /**
+     * 返回包含学校认证信息的用户资料（前端用于“附近推荐”校验）
+     */
+    @GetMapping("/{username}/profile")
+    public Response getUserProfile(@PathVariable("username") String username) {
+        com.example.tomatomall.vo.accounts.AccountVO account = accountService.getUser(username);
+        com.example.tomatomall.vo.accounts.UserSchoolVO school = accountService.getUserSchool(username);
+        java.util.Map<String, Object> payload = new java.util.HashMap<>();
+        payload.put("account", account);
+        payload.put("school", school);
+        return Response.buildSuccess(payload);
+    }
+
+    /**
      * 根据用户ID获取用户详情（公开，用于前端根据 merchantId 跳转到用户名页面）
      */
     @GetMapping("/id/{id}")
     public Response getUserById(@PathVariable("id") Integer id) {
         return Response.buildSuccess(accountService.getUserById(id));
+    }
+    /**
+     * 返回单独的学校认证信息（按用户名或按ID）
+     */
+    @GetMapping("/{username}/school")
+    public Response getUserSchool(@PathVariable("username") String username) {
+        return Response.buildSuccess(accountService.getUserSchool(username));
+    }
+
+    @GetMapping("/id/{id}/school")
+    public Response getUserSchoolById(@PathVariable("id") Integer id) {
+        return Response.buildSuccess(accountService.getUserSchoolById(id));
+    }
+
+    @GetMapping("/id/{id}/profile")
+    public Response getUserProfileById(@PathVariable("id") Integer id) {
+        com.example.tomatomall.vo.accounts.AccountVO account = accountService.getUserById(id);
+        com.example.tomatomall.vo.accounts.UserSchoolVO school = accountService.getUserSchoolById(id);
+        java.util.Map<String, Object> payload = new java.util.HashMap<>();
+        payload.put("account", account);
+        payload.put("school", school);
+        return Response.buildSuccess(payload);
     }
 
     /**

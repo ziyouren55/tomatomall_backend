@@ -113,6 +113,16 @@ public class ProductController
     }
 
     /**
+     * 附近推荐：需要登录并且学校认证通过
+     */
+    @GetMapping("/recommend")
+    public Response<SearchResultVO> getNearbyRecommendations(
+            @RequestParam(defaultValue = "0") Integer page,
+            @RequestParam(defaultValue = "20") Integer pageSize) {
+        return Response.buildSuccess(productService.getNearbyRecommendations(page, pageSize));
+    }
+
+    /**
      * 公开接口：根据店铺ID分页获取该店铺的商品（用于店铺或商家公开页展示）
      */
     @GetMapping("/store/{storeId}")

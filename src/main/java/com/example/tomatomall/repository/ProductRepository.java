@@ -21,6 +21,7 @@ public interface ProductRepository extends JpaRepository<Product,Integer>
      * 支持通过 store 的 merchantId 查找该商家下所有店铺的商品
      */
     Page<Product> findByStore_MerchantId(Integer merchantId, Pageable pageable);
+    Page<Product> findByStore_MerchantIdIn(List<Integer> merchantIds, Pageable pageable);
 
     /**
      * 根据店铺ID查询商品（分页）

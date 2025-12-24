@@ -36,6 +36,10 @@ public class AccountServiceImpl implements AccountService {
 
     @Autowired
     MemberPointsRepository memberPointsRepository;
+    @Autowired
+    private com.example.tomatomall.repository.SchoolVerificationRepository schoolVerificationRepository;
+    @Autowired
+    private com.example.tomatomall.repository.SchoolRepository schoolRepository;
 
     @Override
     public String register(AccountVO accountVO)
@@ -113,6 +117,43 @@ public class AccountServiceImpl implements AccountService {
         } else {
             throw TomatoMallException.usernameNotFind();
         }
+    }
+    @Override
+    public com.example.tomatomall.vo.accounts.UserSchoolVO getUserSchool(String username) {
+        AccountVO base = getUser(username);
+        Integer userId = base.getId();
+        return buildUserSchoolVOByUserId(userId);
+    }
+
+    @Override
+    public com.example.tomatomall.vo.accounts.UserSchoolVO getUserSchoolById(Integer id) {
+        return buildUserSchoolVOByUserId(id);
+    }
+
+    // helper to build UserSchoolVO from userId
+    private com.example.tomatomall.vo.accounts.UserSchoolVO buildUserSchoolVOByUserId(Integer userId) {
+        com.example.tomatomall.vo.accounts.UserSchoolVO vo = new com.example.tomatomall.vo.accounts.UserSchoolVO();
+        java.util.Optional<com.example.tomatomall.po.SchoolVerification> svOpt = schoolVerificationRepository.findByUserId(userId);
+        if (svOpt.isPresent()) {
+            com.example.tomatomall.po.SchoolVerification sv = svOpt.get();
+            boolean certified = sv.getStatus() != null && "VERIFIED".equalsIgnoreCase(sv.getStatus());
+            vo.setSchoolCertified(certified);
+            vo.setSchoolName(sv.getSchoolName());
+            if (certified && sv.getSchoolName() != null) {
+                try {
+                    org.springframework.data.domain.Page<com.example.tomatomall.po.School> sp = schoolRepository.findByNameContainingIgnoreCase(sv.getSchoolName(), org.springframework.data.domain.PageRequest.of(0,1));
+                    if (sp != null && sp.hasContent()) {
+                        com.example.tomatomall.po.School s = sp.getContent().get(0);
+                        vo.setSchoolCode(s.getCode());
+                        vo.setCityCode(s.getCityCode());
+                        vo.setCityName(s.getCityName());
+                    }
+                } catch (Exception ignored) {}
+            }
+        } else {
+            vo.setSchoolCertified(false);
+        }
+        return vo;
     }
 
     @Override

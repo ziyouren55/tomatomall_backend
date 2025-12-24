@@ -26,6 +26,10 @@ import org.springframework.transaction.annotation.Transactional;
 import java.util.List;
 import java.util.Optional;
 import java.util.stream.Collectors;
+import com.example.tomatomall.repository.SchoolVerificationRepository;
+import com.example.tomatomall.repository.SchoolRepository;
+import com.example.tomatomall.po.SchoolVerification;
+import com.example.tomatomall.po.School;
 
 @Service
 public class ProductServiceImpl implements ProductService {
@@ -36,6 +40,10 @@ public class ProductServiceImpl implements ProductService {
     StockpileRepository stockpileRepository;
     @Autowired
     com.example.tomatomall.repository.StoreRepository storeRepository;
+    @Autowired
+    private SchoolVerificationRepository schoolVerificationRepository;
+    @Autowired
+    private SchoolRepository schoolRepository;
 
     @Override
     public SearchResultVO getProductList(Integer page, Integer pageSize, String sortBy, String sortOrder) {
@@ -315,6 +323,123 @@ public class ProductServiceImpl implements ProductService {
             page,
             pageSize
         );
+    }
+
+    @Override
+    public SearchResultVO getNearbyRecommendations(Integer page, Integer pageSize) {
+        // 参数验证和默认值（与其它方法风格一致）
+        if (page == null || page < 0) page = 0;
+        if (pageSize == null || pageSize <= 0) pageSize = 20;
+        if (pageSize > 100) pageSize = 100;
+
+        Integer currentUserId = UserContext.getCurrentUserId();
+        if (currentUserId == null) {
+            throw com.example.tomatomall.exception.TomatoMallException.notLogin();
+        }
+
+        // 检查用户的学校认证
+        Optional<SchoolVerification> mySvOpt = schoolVerificationRepository.findByUserId(currentUserId);
+        if (mySvOpt.isEmpty() || mySvOpt.get().getStatus() == null || !"VERIFIED".equalsIgnoreCase(mySvOpt.get().getStatus())) {
+            throw new com.example.tomatomall.exception.TomatoMallException("SCHOOL_NOT_VERIFIED");
+        }
+        String mySchoolName = mySvOpt.get().getSchoolName();
+
+        // 试图从学校表推导城市信息（取第一个匹配项）
+        String myCityCode = null;
+        try {
+            org.springframework.data.domain.Page<School> schPage = schoolRepository.findByNameContainingIgnoreCase(mySchoolName, PageRequest.of(0, 1));
+            if (schPage != null && schPage.hasContent()) {
+                School s = schPage.getContent().get(0);
+                myCityCode = s.getCityCode();
+            }
+        } catch (Exception ignored) {
+        }
+
+        // 收集同校和同城的商家ID
+        List<SchoolVerification> allSv = schoolVerificationRepository.findAll();
+        List<Integer> sameSchoolMerchantIds = allSv.stream()
+                .filter(sv -> sv.getStatus() != null && "VERIFIED".equalsIgnoreCase(sv.getStatus())
+                        && sv.getSchoolName() != null
+                        && sv.getSchoolName().toLowerCase().contains(mySchoolName.toLowerCase()))
+                .map(SchoolVerification::getUserId)
+                .distinct()
+                .collect(Collectors.toList());
+        final List<Integer> sameSchoolMerchantIdsFinal = (sameSchoolMerchantIds == null) ? java.util.Collections.emptyList() : sameSchoolMerchantIds;
+
+        List<Integer> sameCityMerchantIds = new java.util.ArrayList<>();
+        if (myCityCode != null) {
+            for (SchoolVerification sv : allSv) {
+                if (sv.getStatus() == null || !"VERIFIED".equalsIgnoreCase(sv.getStatus()) || sv.getSchoolName() == null) continue;
+                try {
+                    org.springframework.data.domain.Page<School> sp = schoolRepository.findByNameContainingIgnoreCase(sv.getSchoolName(), PageRequest.of(0, 1));
+                    if (sp != null && sp.hasContent()) {
+                        School sc = sp.getContent().get(0);
+                        if (myCityCode.equalsIgnoreCase(sc.getCityCode())) {
+                            sameCityMerchantIds.add(sv.getUserId());
+                        }
+                    }
+                } catch (Exception ignored) {
+                }
+            }
+        }
+
+        // 确保同校商家优先，若不足再补同城，再补其他
+        List<ProductVO> resultProducts = new java.util.ArrayList<>();
+        int remaining = pageSize;
+
+        // Pageable not needed for custom prioritized queries
+
+        // 同校（优先）
+        if (!sameSchoolMerchantIdsFinal.isEmpty() && remaining > 0) {
+            Page<Product> p = productRepository.findByStore_MerchantIdIn(sameSchoolMerchantIdsFinal, PageRequest.of(0, remaining, Sort.by(Sort.Direction.DESC, "id")));
+            List<ProductVO> vos = p.getContent().stream().map(Product::toVO).collect(Collectors.toList());
+            for (ProductVO vo : vos) {
+                if (remaining <= 0) break;
+                resultProducts.add(vo);
+                remaining--;
+            }
+        }
+
+        // 同城（排除已包含的商家）
+        if (remaining > 0 && sameCityMerchantIds != null && !sameCityMerchantIds.isEmpty()) {
+            List<Integer> cityOnly = new java.util.ArrayList<>();
+            for (Integer id : sameCityMerchantIds) {
+                if (!sameSchoolMerchantIdsFinal.contains(id) && !cityOnly.contains(id)) {
+                    cityOnly.add(id);
+                }
+            }
+            if (!cityOnly.isEmpty()) {
+                Page<Product> p2 = productRepository.findByStore_MerchantIdIn(cityOnly, PageRequest.of(0, remaining, Sort.by(Sort.Direction.DESC, "id")));
+                List<ProductVO> vos2 = p2.getContent().stream().map(Product::toVO).collect(Collectors.toList());
+                for (ProductVO vo : vos2) {
+                    if (remaining <= 0) break;
+                    // 防止重复
+                    boolean exists = resultProducts.stream().anyMatch(rp -> rp.getId().equals(vo.getId()));
+                    if (!exists) {
+                        resultProducts.add(vo);
+                        remaining--;
+                    }
+                }
+            }
+        }
+
+        // 其他商品补齐（不限制商家）
+        if (remaining > 0) {
+            Page<Product> others = productRepository.findAll(PageRequest.of(0, remaining, Sort.by(Sort.Direction.DESC, "id")));
+            List<ProductVO> vos = others.getContent().stream().map(Product::toVO).collect(Collectors.toList());
+            for (ProductVO vo : vos) {
+                if (remaining <= 0) break;
+                // 简单去重：避免加入重复 productId
+                boolean exists = resultProducts.stream().anyMatch(rp -> rp.getId().equals(vo.getId()));
+                if (!exists) {
+                    resultProducts.add(vo);
+                    remaining--;
+                }
+            }
+        }
+
+        // 返回构建：注意 total 值这里仅为 resultProducts.size()
+        return new SearchResultVO(resultProducts, (long) resultProducts.size(), page, pageSize);
     }
 
     @Override

@@ -23,6 +23,7 @@ public class AccountVO
     private Integer memberLevelId;
     private Boolean isMember;
     private String location;
+    
 
     /**
      * 获取角色枚举值
