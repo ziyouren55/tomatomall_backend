@@ -152,8 +152,17 @@ public class ChatServiceImpl implements ChatService {
 
         // 通过WebSocket推送消息
         ChatMessageVO messageVO = convertToMessageVO(savedMessage);
+
+        // 推送给接收方
         simpMessagingTemplate.convertAndSendToUser(
             String.valueOf(isCustomer ? session.getMerchantId() : session.getCustomerId()),
+            "/chat",
+            messageVO
+        );
+
+        // 也推送给自己，确保发送方能看到自己的消息（替换临时消息）
+        simpMessagingTemplate.convertAndSendToUser(
+            String.valueOf(senderId),
             "/chat",
             messageVO
         );
