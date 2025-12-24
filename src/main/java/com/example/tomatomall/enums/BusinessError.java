@@ -12,6 +12,8 @@ public enum BusinessError {
     USER_NOT_FOUND("USER_NOT_FOUND", "用户不存在"),
     PRODUCT_NOT_FOUND("PRODUCT_NOT_FOUND", "商品不存在"),
     STORE_NOT_FOUND("STORE_NOT_FOUND", "店铺不存在"),
+    CHAT_SESSION_NOT_FOUND("CHAT_SESSION_NOT_FOUND", "聊天会话不存在"),
+    CHAT_MESSAGE_NOT_FOUND("CHAT_MESSAGE_NOT_FOUND", "聊天消息不存在"),
 
     // 权限相关错误
     PERMISSION_DENIED("PERMISSION_DENIED", "权限不足"),

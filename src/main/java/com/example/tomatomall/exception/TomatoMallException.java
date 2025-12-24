@@ -88,4 +88,12 @@ public class TomatoMallException extends RuntimeException{
     public static TomatoMallException schoolNotVerified() {
         return new TomatoMallException("用户未通过学校认证");
     }
+
+    public static TomatoMallException chatSessionNotFound() {
+        return new TomatoMallException("聊天会话不存在");
+    }
+
+    public static TomatoMallException chatMessageNotFound() {
+        return new TomatoMallException("聊天消息不存在");
+    }
 }
