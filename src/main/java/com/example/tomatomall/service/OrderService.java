@@ -66,4 +66,11 @@ public interface OrderService {
      * @param userId 当前用户ID（买家）
      */
     void confirmReceipt(Integer orderId, Integer userId);
+
+    /**
+     * 用户取消订单：只允许取消PENDING状态的订单
+     * @param orderId 订单ID
+     * @param userId 当前用户ID（买家）
+     */
+    void cancelOrder(Integer orderId, Integer userId);
 }

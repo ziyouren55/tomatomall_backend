@@ -723,4 +723,29 @@ public class OrderServiceImpl implements OrderService {
         }
     }
 
+    @Override
+    @Transactional
+    public void cancelOrder(Integer orderId, Integer userId) {
+        // 验证订单存在
+        Optional<Order> orderOpt = orderRepository.findById(orderId);
+        if (!orderOpt.isPresent()) {
+            throw TomatoMallException.orderNotFound();
+        }
+        Order order = orderOpt.get();
+
+        // 验证订单是否属于该用户
+        if (!order.getUserId().equals(userId)) {
+            throw TomatoMallException.permissionDenied();
+        }
+
+        // 验证订单状态：只允许取消PENDING状态的订单（支付前）
+        if (!OrderStatus.PENDING.getCode().equals(order.getStatus())) {
+            throw new TomatoMallException("只有待支付状态的订单才能取消");
+        }
+
+        // 更新订单状态为CANCELLED
+        order.setStatus(OrderStatus.CANCELLED.getCode());
+        orderRepository.save(order);
+    }
+
 }

@@ -92,6 +92,16 @@ public class OrderController {
         return Response.buildSuccess("确认收货成功");
     }
 
+    /**
+     * 用户取消订单
+     */
+    @PostMapping("/{orderId}/cancel")
+    public Response cancelOrder(@PathVariable Integer orderId,
+                                @RequestAttribute("userId") Integer userId) {
+        orderService.cancelOrder(orderId, userId);
+        return Response.buildSuccess("订单取消成功");
+    }
+
     @PostMapping("/{orderId}/pay")
     public Response initiatePayment(@PathVariable Integer orderId){
         return Response.buildSuccess(orderService.initiatePayment(orderId));
