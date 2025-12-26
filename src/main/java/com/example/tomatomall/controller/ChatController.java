@@ -9,6 +9,7 @@ import com.example.tomatomall.vo.PageResultVO;
 import com.example.tomatomall.vo.Response;
 import com.example.tomatomall.vo.chat.ChatMessageVO;
 import com.example.tomatomall.vo.chat.ChatSessionVO;
+import com.example.tomatomall.vo.chat.CreateSessionWithCustomerRequest;
 import org.springframework.web.bind.annotation.*;
 
 import javax.annotation.Resource;
@@ -61,6 +62,17 @@ public class ChatController {
         if (currentUserId == null) throw TomatoMallException.notLogin();
 
         ChatSession session = chatService.createOrGetSession(currentUserId, request.getStoreId());
+        ChatSessionVO sessionVO = chatService.getChatSession(session.getId(), currentUserId);
+        return Response.buildSuccess(sessionVO);
+    }
+
+    // 商家创建与顾客的聊天会话
+    @PostMapping("/sessions/with-customer")
+    public Response<ChatSessionVO> createSessionWithCustomer(@RequestBody CreateSessionWithCustomerRequest request) {
+        Integer currentUserId = UserContext.getCurrentUserId();
+        if (currentUserId == null) throw TomatoMallException.notLogin();
+
+        ChatSession session = chatService.createOrGetSessionWithCustomer(currentUserId, request.getCustomerId());
         ChatSessionVO sessionVO = chatService.getChatSession(session.getId(), currentUserId);
         return Response.buildSuccess(sessionVO);
     }

@@ -14,6 +14,7 @@ public interface ChatService {
     List<ChatSessionVO> getUserChatSessions(Integer userId);
     ChatSessionVO getChatSession(Integer sessionId, Integer userId);
     ChatSession createOrGetSession(Integer customerId, Integer storeId);
+    ChatSession createOrGetSessionWithCustomer(Integer merchantId, Integer customerId);
 
     // 消息管理
     PageResultVO<ChatMessageVO> getSessionMessages(Integer sessionId, Integer userId, Integer page, Integer pageSize);

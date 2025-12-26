@@ -84,6 +84,33 @@ public class ChatServiceImpl implements ChatService {
     }
 
     @Override
+    @Transactional
+    public ChatSession createOrGetSessionWithCustomer(Integer merchantId, Integer customerId) {
+        // 查找商家是否有店铺
+        List<Store> merchantStores = storeRepository.findByMerchantId(merchantId);
+        if (merchantStores.isEmpty()) {
+            throw new TomatoMallException("商家暂无店铺，无法发起聊天");
+        }
+
+        // 使用第一个店铺ID创建会话
+        Integer storeId = merchantStores.get(0).getId();
+
+        // 检查是否已存在会话
+        Optional<ChatSession> existingSession = chatSessionRepository.findByCustomerIdAndStoreId(customerId, storeId);
+        if (existingSession.isPresent()) {
+            return existingSession.get();
+        }
+
+        // 创建新会话
+        ChatSession session = new ChatSession();
+        session.setCustomerId(customerId);
+        session.setStoreId(storeId);
+        session.setMerchantId(merchantId);
+
+        return chatSessionRepository.save(session);
+    }
+
+    @Override
     public PageResultVO<ChatMessageVO> getSessionMessages(Integer sessionId, Integer userId, Integer page, Integer pageSize) {
         // 验证用户权限
         Optional<ChatSession> sessionOpt = chatSessionRepository.findById(sessionId);
