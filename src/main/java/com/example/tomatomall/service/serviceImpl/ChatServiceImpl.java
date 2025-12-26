@@ -15,7 +15,9 @@ import org.springframework.messaging.simp.SimpMessagingTemplate;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 import java.util.stream.Collectors;
 
@@ -150,32 +152,38 @@ public class ChatServiceImpl implements ChatService {
 
         chatSessionRepository.save(session);
 
-        // 通过WebSocket推送消息
+        // 通过WebSocket推送消息和更新的会话信息
         ChatMessageVO messageVO = convertToMessageVO(savedMessage);
+        ChatSessionVO sessionVO = convertToSessionVO(session);
+
+        // 创建复合推送对象，包含消息和更新的会话状态
+        Map<String, Object> pushData = new HashMap<>();
+        pushData.put("message", messageVO);
+        pushData.put("updatedSession", sessionVO);
 
         String receiverUserId = String.valueOf(isCustomer ? session.getMerchantId() : session.getCustomerId());
         String senderUserId = String.valueOf(senderId);
 
-        // 使用与通知功能一致的队列路径推送消息给接收方
+        // 使用与通知功能一致的队列路径推送复合对象给接收方
         try {
             simpMessagingTemplate.convertAndSendToUser(
                 receiverUserId,
                 "/queue/chat",
-                messageVO
+                pushData
             );
-            System.out.println("[CHAT WS] Sent to receiver: " + receiverUserId + " via /queue/chat");
+            System.out.println("[CHAT WS] Sent to receiver: " + receiverUserId + " via /queue/chat with message and session");
         } catch (Exception e) {
             System.out.println("[CHAT WS] Failed to send to receiver " + receiverUserId + ": " + e.getMessage());
         }
 
-        // 推送给自己，确保发送方能看到自己的消息
+        // 推送给自己，确保发送方能看到自己的消息（发送方不需要更新会话状态）
         try {
             simpMessagingTemplate.convertAndSendToUser(
                 senderUserId,
                 "/queue/chat",
                 messageVO
             );
-            System.out.println("[CHAT WS] Sent to sender: " + senderUserId + " via /queue/chat");
+            System.out.println("[CHAT WS] Sent to sender: " + senderUserId + " via /queue/chat with message only");
         } catch (Exception e) {
             System.out.println("[CHAT WS] Failed to send to sender " + senderUserId + ": " + e.getMessage());
         }
