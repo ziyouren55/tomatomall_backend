@@ -177,10 +177,9 @@ public class CouponServiceImpl implements CouponService
             if (Boolean.TRUE.equals(userCoupon.getIsUsed())) {
                 throw new TomatoMallException("优惠券已被使用");
             }
-            couponId = userCoupon.getCouponId();
         } else {
             Optional<UserCoupon> userCouponOpt = userCouponRepository.findFirstByUserIdAndCouponIdAndIsUsedFalse(userId, couponId);
-            if (!userCouponOpt.isPresent()) {
+            if (userCouponOpt.isEmpty()) {
                 throw new TomatoMallException("无效的优惠券或优惠券已使用");
             }
             userCoupon = userCouponOpt.get();
@@ -240,7 +239,7 @@ public class CouponServiceImpl implements CouponService
         } else if (discountPercentage != null) {
             actualDiscountAmount = order.getTotalAmount()
                 .multiply(discountPercentage)
-                .divide(new BigDecimal("100"), 2, BigDecimal.ROUND_HALF_UP);
+                .divide(new BigDecimal("100"), 2, java.math.RoundingMode.HALF_UP);
         }
 
         BigDecimal newAmount = order.getTotalAmount().subtract(actualDiscountAmount);
@@ -340,7 +339,7 @@ public class CouponServiceImpl implements CouponService
         List<Account> accounts = accountRepository.findAll()
             .stream()
             .filter(acc -> acc.getRole() == null || !"ADMIN".equalsIgnoreCase(acc.getRole().name()))
-            .collect(Collectors.toList());
+            .toList();
 
         if (accounts.isEmpty()) {
             return 0;
@@ -432,7 +431,7 @@ public class CouponServiceImpl implements CouponService
 
         // 2. 获取聊天会话信息，确认客户身份
         Optional<ChatSession> sessionOpt = chatSessionRepository.findById(request.getSessionId());
-        if (!sessionOpt.isPresent()) {
+        if (sessionOpt.isEmpty()) {
             throw new TomatoMallException("聊天会话不存在");
         }
 
@@ -472,7 +471,7 @@ public class CouponServiceImpl implements CouponService
     public boolean validateMerchantProductPermission(Integer merchantId, Integer productId) {
         // 获取商品信息
         Optional<Product> productOpt = productRepository.findById(productId);
-        if (!productOpt.isPresent()) {
+        if (productOpt.isEmpty()) {
             return false;
         }
 

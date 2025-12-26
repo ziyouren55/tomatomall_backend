@@ -249,7 +249,8 @@ public class OrderServiceImpl implements OrderService {
             for (OrderItem oi : allItems) {
                 if (oi.getStoreId() != null) {
                     storeRepository.findById(oi.getStoreId()).ifPresent(store -> {
-                        if (store.getMerchantId() != null && store.getMerchantId().equals(merchantId)) {
+                        Integer storeMerchantId = store.getMerchantId();
+                        if (storeMerchantId != null && storeMerchantId.equals(merchantId)) {
                             myItems.add(oi);
                         }
                     });
@@ -259,7 +260,8 @@ public class OrderServiceImpl implements OrderService {
                         Integer sId = product.getStoreId();
                         if (sId != null) {
                             storeRepository.findById(sId).ifPresent(store -> {
-                                if (store.getMerchantId() != null && store.getMerchantId().equals(merchantId)) {
+                                Integer storeMerchantId = store.getMerchantId();
+                                if (storeMerchantId != null && storeMerchantId.equals(merchantId)) {
                                     myItems.add(oi);
                                 }
                             });

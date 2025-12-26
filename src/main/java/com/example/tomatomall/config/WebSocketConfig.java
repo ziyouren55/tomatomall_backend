@@ -7,7 +7,6 @@ import org.springframework.web.socket.config.annotation.StompEndpointRegistry;
 import org.springframework.web.socket.config.annotation.WebSocketMessageBrokerConfigurer;
 import org.springframework.beans.factory.annotation.Autowired;
 import com.example.tomatomall.util.TokenUtil;
-import com.example.tomatomall.config.TokenHandshakeHandler;
 
 @Configuration
 @EnableWebSocketMessageBroker
@@ -17,7 +16,7 @@ public class WebSocketConfig implements WebSocketMessageBrokerConfigurer {
     private TokenUtil tokenUtil;
 
     @Override
-    public void registerStompEndpoints(StompEndpointRegistry registry) {
+    public void registerStompEndpoints(@org.springframework.lang.NonNull StompEndpointRegistry registry) {
         // 限制允许的前端 origin，避免浏览器因 credentials 模式下 Access-Control-Allow-Origin 为 '*' 而拒绝
         // 使用自定义 HandshakeHandler 从 token 中解析 Principal
         registry.addEndpoint("/ws")
@@ -32,7 +31,7 @@ public class WebSocketConfig implements WebSocketMessageBrokerConfigurer {
     }
 
     @Override
-    public void configureMessageBroker(MessageBrokerRegistry registry) {
+    public void configureMessageBroker(@org.springframework.lang.NonNull MessageBrokerRegistry registry) {
         registry.enableSimpleBroker("/topic", "/queue");
         registry.setApplicationDestinationPrefixes("/app");
         registry.setUserDestinationPrefix("/user");

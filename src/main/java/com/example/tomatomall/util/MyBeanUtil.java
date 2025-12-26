@@ -15,17 +15,21 @@ public class MyBeanUtil {
      * @return 为 null 的属性名称数组
      */
     public static String[] getNullPropertyNames(Object source) {
+        if (source == null) {
+            return new String[0];
+        }
         BeanWrapper src = new BeanWrapperImpl(source);
         PropertyDescriptor[] pds = src.getPropertyDescriptors();
         Set<String> emptyNames = new HashSet<>();
         for (PropertyDescriptor pd : pds) {
+            String propertyName = pd.getName();
             // 过滤掉 "class" 属性
-            if ("class".equals(pd.getName())) {
+            if ("class".equals(propertyName)) {
                 continue;
             }
-            Object srcValue = src.getPropertyValue(pd.getName());
+            Object srcValue = src.getPropertyValue(propertyName);
             if (srcValue == null) {
-                emptyNames.add(pd.getName());
+                emptyNames.add(propertyName);
             }
         }
         return emptyNames.toArray(new String[0]);

@@ -4,6 +4,7 @@ import com.example.tomatomall.enums.CouponType;
 
 import javax.persistence.AttributeConverter;
 import javax.persistence.Converter;
+import java.util.Objects;
 
 /**
  * CouponType 枚举转换器
@@ -15,10 +16,7 @@ public class CouponTypeConverter implements AttributeConverter<CouponType, Strin
 
     @Override
     public String convertToDatabaseColumn(CouponType attribute) {
-        if (attribute == null) {
-            return CouponType.REPEAT.name();
-        }
-        return attribute.name();
+        return Objects.requireNonNullElse(attribute, CouponType.REPEAT).name();
     }
 
     @Override
@@ -27,7 +25,6 @@ public class CouponTypeConverter implements AttributeConverter<CouponType, Strin
             return CouponType.REPEAT;
         }
         // 使用 CouponType.fromValue 方法，它会处理大小写转换和无效值
-        CouponType result = CouponType.fromValue(dbData);
-        return result;
+        return CouponType.fromValue(dbData);
     }
 }

@@ -30,7 +30,9 @@ public class LoginInterceptor implements HandlerInterceptor
     TokenUtil tokenUtil;
 
     @Override
-    public boolean preHandle(HttpServletRequest request, HttpServletResponse response, Object handler)
+    public boolean preHandle(@org.springframework.lang.NonNull HttpServletRequest request,
+                            @org.springframework.lang.NonNull HttpServletResponse response,
+                            @org.springframework.lang.NonNull Object handler)
     {
         // 白名单路径的二次验证
         if (isWhitelistedRequest(request))

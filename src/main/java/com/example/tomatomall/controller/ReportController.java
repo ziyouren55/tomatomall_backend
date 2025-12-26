@@ -19,7 +19,7 @@ public class ReportController {
      * 提交举报
      */
     @PostMapping
-    public Response createReport(@RequestBody @Valid ReportCreateVO reportVO,
+    public Response<ReportVO> createReport(@RequestBody @Valid ReportCreateVO reportVO,
                                  @RequestAttribute("userId") Integer userId) {
         ReportVO report = reportService.createReport(reportVO, userId);
         return Response.buildSuccess(report);

@@ -103,7 +103,7 @@ public class ChatServiceImpl implements ChatService {
                 .map(this::convertToMessageVO)
                 .collect(Collectors.toList());
 
-        return new PageResultVO<ChatMessageVO>(messageVOs, messages.getTotalElements(), page, pageSize);
+        return new PageResultVO<>(messageVOs, messages.getTotalElements(), page, pageSize);
     }
 
     @Override
@@ -261,9 +261,7 @@ public class ChatServiceImpl implements ChatService {
 
         // 获取店铺信息
         Optional<Store> storeOpt = storeRepository.findById(session.getStoreId());
-        if (storeOpt.isPresent()) {
-            vo.setStoreName(storeOpt.get().getName());
-        }
+        storeOpt.ifPresent(store -> vo.setStoreName(store.getName()));
 
         // 获取用户信息
         Optional<Account> customerOpt = accountRepository.findById(session.getCustomerId());

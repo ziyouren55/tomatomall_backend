@@ -17,10 +17,11 @@ public class ChatWebSocketController {
     @MessageMapping("/chat.send")
     public void sendMessage(@Payload ChatWebSocketMessage message, SimpMessageHeaderAccessor headerAccessor) {
         // 从header中获取用户ID（通过TokenHandshakeHandler设置）
-        if (headerAccessor.getUser() == null || headerAccessor.getUser().getName() == null) {
+        java.security.Principal user = headerAccessor.getUser();
+        if (user == null || user.getName() == null) {
             return;
         }
-        String userId = headerAccessor.getUser().getName();
+        String userId = user.getName();
 
         // 发送消息（senderRole由后端根据用户身份确定）
         chatService.sendMessage(message.getSessionId(), Integer.valueOf(userId),
@@ -29,10 +30,11 @@ public class ChatWebSocketController {
 
     @MessageMapping("/chat.mark-read")
     public void markAsRead(@Payload MarkReadMessage message, SimpMessageHeaderAccessor headerAccessor) {
-        if (headerAccessor.getUser() == null || headerAccessor.getUser().getName() == null) {
+        java.security.Principal user = headerAccessor.getUser();
+        if (user == null || user.getName() == null) {
             return;
         }
-        String userId = headerAccessor.getUser().getName();
+        String userId = user.getName();
 
         chatService.markSessionAsRead(message.getSessionId(), Integer.valueOf(userId));
     }

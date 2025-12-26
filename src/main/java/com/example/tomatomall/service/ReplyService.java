@@ -4,8 +4,6 @@ import com.example.tomatomall.vo.post.ReplyCreateVO;
 import com.example.tomatomall.vo.post.ReplyVO;
 import org.springframework.data.domain.Page;
 
-import java.util.List;
-
 public interface ReplyService {
     // 发表回复
     ReplyVO createReply(ReplyCreateVO replyVO, Integer userId);

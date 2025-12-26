@@ -6,12 +6,14 @@ import com.example.tomatomall.service.MemberService;
 import com.example.tomatomall.vo.Response;
 import com.example.tomatomall.vo.member.MemberLevelVO;
 import com.example.tomatomall.vo.member.MemberPointsVO;
+import com.example.tomatomall.vo.member.PointsRecordVO;
 import com.example.tomatomall.repository.AccountRepository;
 import com.example.tomatomall.po.Account;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
 @RestController
@@ -27,7 +29,7 @@ public class MemberController {
      * 获取用户会员信息
      */
     @GetMapping("/info")
-    public Response getMemberInfo(@RequestAttribute("userId") Integer userId) {
+    public Response<Map<String, Object>> getMemberInfo(@RequestAttribute("userId") Integer userId) {
         Account account = accountRepository.findById(userId).orElse(null);
 
         Map<String, Object> result = new HashMap<>();
@@ -71,7 +73,7 @@ public class MemberController {
      * 获取用户当前会员等级
      */
     @GetMapping("/level")
-    public Response getMemberLevel(@RequestAttribute("userId") Integer userId) {
+    public Response<MemberLevelVO> getMemberLevel(@RequestAttribute("userId") Integer userId) {
         return Response.buildSuccess(memberService.getMemberLevelByUserId(userId));
     }
 
@@ -79,7 +81,7 @@ public class MemberController {
      * 获取所有会员等级列表
      */
     @GetMapping("/levels")
-    public Response getAllLevels() {
+    public Response<List<MemberLevelVO>> getAllLevels() {
         return Response.buildSuccess(memberService.getAllMemberLevels());
     }
 
@@ -87,7 +89,7 @@ public class MemberController {
      * 获取用户当前积分
      */
     @GetMapping("/points")
-    public Response getUserPoints(@RequestAttribute("userId") Integer userId) {
+    public Response<MemberPointsVO> getUserPoints(@RequestAttribute("userId") Integer userId) {
         return Response.buildSuccess(memberService.getUserPoints(userId));
     }
 
@@ -95,7 +97,7 @@ public class MemberController {
      * 获取用户积分历史记录
      */
     @GetMapping("/points/history")
-    public Response getPointsHistory(@RequestAttribute("userId") Integer userId) {
+    public Response<List<PointsRecordVO>> getPointsHistory(@RequestAttribute("userId") Integer userId) {
         return Response.buildSuccess(memberService.getUserPointsHistory(userId));
     }
 
@@ -103,7 +105,7 @@ public class MemberController {
      * 兼容旧数据：若会员缺少等级/积分，补全为一级会员
      */
     @PostMapping("/repair")
-    public Response repairMember(@RequestAttribute("userId") Integer userId) {
+    public Response<MemberLevelVO> repairMember(@RequestAttribute("userId") Integer userId) {
         return Response.buildSuccess(memberService.repairMemberLevel(userId));
     }
 }

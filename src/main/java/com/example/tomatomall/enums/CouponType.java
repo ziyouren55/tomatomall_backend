@@ -1,9 +1,12 @@
 package com.example.tomatomall.enums;
 
+import lombok.Getter;
+
 /**
  * 优惠券类型枚举
  * 支持大小写兼容的字符串转换，提高系统包容性
  */
+@Getter
 public enum CouponType {
     /**
      * 可重复兑换的优惠券（出现在领券中心）
@@ -19,10 +22,6 @@ public enum CouponType {
 
     CouponType(String value) {
         this.value = value;
-    }
-
-    public String getValue() {
-        return value;
     }
 
     /**
@@ -50,14 +49,12 @@ public enum CouponType {
      * 获取显示名称
      */
     public String getDisplayName() {
-        switch (this) {
-            case REPEAT:
-                return "可重复兑换";
-            case PRIVATE:
-                return "私人优惠券";
-            default:
-                return this.value;
-        }
+        return switch (this)
+        {
+            case REPEAT -> "可重复兑换";
+            case PRIVATE -> "私人优惠券";
+            default -> this.value;
+        };
     }
 
     /**

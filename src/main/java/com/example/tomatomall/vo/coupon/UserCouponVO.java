@@ -3,12 +3,8 @@ package com.example.tomatomall.vo.coupon;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
-
 import java.math.BigDecimal;
 import java.util.Date;
-
-import org.apache.kafka.common.protocol.types.Field.Str;
-
 import com.example.tomatomall.enums.CouponType;
 
 @Setter

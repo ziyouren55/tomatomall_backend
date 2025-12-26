@@ -4,6 +4,8 @@ import com.example.tomatomall.service.MemberService;
 import com.example.tomatomall.vo.Response;
 import com.example.tomatomall.vo.member.MemberLevelVO;
 import com.example.tomatomall.vo.member.PointsAdjustmentVO;
+import com.example.tomatomall.vo.member.PointsRecordVO;
+import java.util.List;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.*;
 
@@ -17,7 +19,7 @@ public class AdminMemberController {
      * 获取所有会员等级
      */
     @GetMapping("/levels")
-    public Response getAllLevels() {
+    public Response<List<MemberLevelVO>> getAllLevels() {
         return Response.buildSuccess(memberService.getAllMemberLevels());
     }
 
@@ -25,7 +27,7 @@ public class AdminMemberController {
      * 根据ID获取会员等级
      */
     @GetMapping("/levels/{levelId}")
-    public Response getLevelById(@PathVariable Integer levelId) {
+    public Response<MemberLevelVO> getLevelById(@PathVariable Integer levelId) {
         return Response.buildSuccess(memberService.getMemberLevelById(levelId));
     }
 
@@ -33,7 +35,7 @@ public class AdminMemberController {
      * 创建会员等级
      */
     @PostMapping("/levels")
-    public Response createLevel(@RequestBody MemberLevelVO levelVO) {
+    public Response<MemberLevelVO> createLevel(@RequestBody MemberLevelVO levelVO) {
         return Response.buildSuccess(memberService.createMemberLevel(levelVO));
     }
 
@@ -41,7 +43,7 @@ public class AdminMemberController {
      * 更新会员等级
      */
     @PutMapping("/levels/{levelId}")
-    public Response updateLevel(@PathVariable Integer levelId, @RequestBody MemberLevelVO levelVO) {
+    public Response<MemberLevelVO> updateLevel(@PathVariable Integer levelId, @RequestBody MemberLevelVO levelVO) {
         return Response.buildSuccess(memberService.updateMemberLevel(levelId, levelVO));
     }
 
@@ -49,7 +51,7 @@ public class AdminMemberController {
      * 手动升级用户会员等级
      */
     @PostMapping("/upgrade/{userId}")
-    public Response upgradeUserLevel(@PathVariable Integer userId, @RequestParam Integer targetLevelId) {
+    public Response<MemberLevelVO> upgradeUserLevel(@PathVariable Integer userId, @RequestParam Integer targetLevelId) {
         return Response.buildSuccess(memberService.upgradeMemberLevel(userId, targetLevelId));
     }
 
@@ -57,7 +59,7 @@ public class AdminMemberController {
      * 删除会员等级
      */
     @DeleteMapping("/levels/{levelId}")
-    public Response deleteLevel(@PathVariable Integer levelId) {
+    public Response<String> deleteLevel(@PathVariable Integer levelId) {
         memberService.deleteMemberLevel(levelId);
         return Response.buildSuccess("删除成功");
     }
@@ -66,7 +68,7 @@ public class AdminMemberController {
      * 查看用户积分记录
      */
     @GetMapping("/points/{userId}")
-    public Response getUserPointsHistory(@PathVariable Integer userId) {
+    public Response<List<PointsRecordVO>> getUserPointsHistory(@PathVariable Integer userId) {
         return Response.buildSuccess(memberService.getUserPointsHistory(userId));
     }
 
@@ -74,7 +76,7 @@ public class AdminMemberController {
      * 手动调整用户积分
      */
     @PostMapping("/points/adjust")
-    public Response adjustUserPoints(@RequestBody PointsAdjustmentVO adjustment) {
+    public Response<PointsRecordVO> adjustUserPoints(@RequestBody PointsAdjustmentVO adjustment) {
         return Response.buildSuccess(memberService.addUserPoints(
             adjustment.getUserId(),
             adjustment.getPointsChange(),

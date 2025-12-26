@@ -67,21 +67,13 @@ public class ProductServiceImpl implements ProductService {
                 ? Sort.Direction.DESC
                 : Sort.Direction.ASC;
 
-            Sort sort;
-            switch (sortBy.toLowerCase()) {
-                case "price":
-                    sort = Sort.by(direction, "price");
-                    break;
-                case "salescount":
-                case "sales_count":
-                    sort = Sort.by(direction, "salesCount");
-                    break;
-                case "rate":
-                    sort = Sort.by(direction, "rate");
-                    break;
-                default:
-                    sort = Sort.by(Sort.Direction.DESC, "id"); // 默认按ID降序
-            }
+            Sort sort = switch (sortBy.toLowerCase())
+            {
+                case "price" -> Sort.by(direction, "price");
+                case "salescount", "sales_count" -> Sort.by(direction, "salesCount");
+                case "rate" -> Sort.by(direction, "rate");
+                default -> Sort.by(Sort.Direction.DESC, "id"); // 默认按ID降序
+            };
             pageable = PageRequest.of(page, pageSize, sort);
         } else {
             // 默认按ID降序
@@ -161,7 +153,7 @@ public class ProductServiceImpl implements ProductService {
         if (currentRole == UserRole.MERCHANT) {
             Integer storeId = product.getStoreId();
             if (storeId == null) throw TomatoMallException.permissionDenied();
-            Store store = storeRepository.findById(storeId).orElseThrow(() -> TomatoMallException.storeNotFind());
+            Store store = storeRepository.findById(storeId).orElseThrow(TomatoMallException::storeNotFind);
             if (!store.getMerchantId().equals(currentUserId)) throw TomatoMallException.permissionDenied();
             // 商家不能更改商品归属
             productVO.setStoreId(null);
@@ -192,7 +184,7 @@ public class ProductServiceImpl implements ProductService {
                 }
             } else {
                 // 校验指定 storeId 是否属于当前商家
-                Store s = storeRepository.findById(productVO.getStoreId()).orElseThrow(() -> TomatoMallException.storeNotFind());
+                Store s = storeRepository.findById(productVO.getStoreId()).orElseThrow(TomatoMallException::storeNotFind);
                 if (!s.getMerchantId().equals(currentUserId)) throw TomatoMallException.permissionDenied();
             }
         }
@@ -228,13 +220,11 @@ public class ProductServiceImpl implements ProductService {
         if (currentRole == UserRole.MERCHANT) {
             Integer storeId = product.getStoreId();
             if (storeId == null) throw TomatoMallException.permissionDenied();
-            Store store = storeRepository.findById(storeId).orElseThrow(() -> TomatoMallException.storeNotFind());
+            Store store = storeRepository.findById(storeId).orElseThrow(TomatoMallException::storeNotFind);
             if (!store.getMerchantId().equals(currentUserId)) throw TomatoMallException.permissionDenied();
         }
         Optional<Stockpile> stockpile = stockpileRepository.findByProduct_Id(id);
-        if (stockpile.isPresent()) {
-            stockpileRepository.delete(stockpile.get());
-        }
+        stockpile.ifPresent(value -> stockpileRepository.delete(value));
         productRepository.deleteById(id);
         return "删除成功";
     }
@@ -244,7 +234,7 @@ public class ProductServiceImpl implements ProductService {
     public String updateProductStockpile(Integer productId, Integer amount) {
         // 检查商品是否存在并做权限校验（商家只能修改自己的商品库存）
         Optional<Product> productOpt = productRepository.findById(productId);
-        if (!productOpt.isPresent()) {
+        if (productOpt.isEmpty()) {
             throw TomatoMallException.productNotFind();
         }
         Product product = productOpt.get();
@@ -253,11 +243,11 @@ public class ProductServiceImpl implements ProductService {
         if (currentRole == UserRole.MERCHANT) {
             Integer storeId = product.getStoreId();
             if (storeId == null) throw TomatoMallException.permissionDenied();
-            Store store = storeRepository.findById(storeId).orElseThrow(() -> TomatoMallException.storeNotFind());
+            Store store = storeRepository.findById(storeId).orElseThrow(TomatoMallException::storeNotFind);
             if (!store.getMerchantId().equals(currentUserId)) throw TomatoMallException.permissionDenied();
         }
         Optional<Stockpile> stockpile = stockpileRepository.findByProduct_Id(productId);
-        if (!stockpile.isPresent()) {
+        if (stockpile.isEmpty()) {
             Stockpile newStockpile = new Stockpile();
             newStockpile.setProduct(product);
             newStockpile.setAmount(amount);
@@ -283,9 +273,7 @@ public class ProductServiceImpl implements ProductService {
             defaultStockpile.setFrozen(0);
             // 尝试获取商品名称
             Optional<Product> product = productRepository.findById(productId);
-            if (product.isPresent()) {
-                defaultStockpile.setProductName(product.get().getTitle());
-            }
+            product.ifPresent(value -> defaultStockpile.setProductName(value.getTitle()));
             return defaultStockpile;
         }
     }
@@ -308,7 +296,7 @@ public class ProductServiceImpl implements ProductService {
         Integer currentUserId = UserContext.getCurrentUserId();
         UserRole currentRole = UserContext.getCurrentUserRole();
         Page<Stockpile> stockpilePage;
-        if (currentRole != null && currentRole == UserRole.MERCHANT && currentUserId != null) {
+        if (currentRole == UserRole.MERCHANT && currentUserId != null) {
             stockpilePage = stockpileRepository.findByProduct_Store_MerchantId(currentUserId, pageable);
         } else {
             stockpilePage = stockpileRepository.findAll(pageable);
@@ -366,7 +354,6 @@ public class ProductServiceImpl implements ProductService {
                 .map(SchoolVerification::getUserId)
                 .distinct()
                 .collect(Collectors.toList());
-        final List<Integer> sameSchoolMerchantIdsFinal = (sameSchoolMerchantIds == null) ? java.util.Collections.emptyList() : sameSchoolMerchantIds;
 
         List<Integer> sameCityMerchantIds = new java.util.ArrayList<>();
         if (myCityCode != null) {
@@ -392,9 +379,9 @@ public class ProductServiceImpl implements ProductService {
         // Pageable not needed for custom prioritized queries
 
         // 同校（优先）
-        if (!sameSchoolMerchantIdsFinal.isEmpty() && remaining > 0) {
-            Page<Product> p = productRepository.findByStore_MerchantIdIn(sameSchoolMerchantIdsFinal, PageRequest.of(0, remaining, Sort.by(Sort.Direction.DESC, "id")));
-            List<ProductVO> vos = p.getContent().stream().map(Product::toVO).collect(Collectors.toList());
+        if (!sameSchoolMerchantIds.isEmpty()) {
+            Page<Product> p = productRepository.findByStore_MerchantIdIn(sameSchoolMerchantIds, PageRequest.of(0, remaining, Sort.by(Sort.Direction.DESC, "id")));
+            List<ProductVO> vos = p.getContent().stream().map(Product::toVO).toList();
             for (ProductVO vo : vos) {
                 if (remaining <= 0) break;
                 RecommendProductVO r = new RecommendProductVO();
@@ -406,16 +393,16 @@ public class ProductServiceImpl implements ProductService {
         }
 
         // 同城（排除已包含的商家）
-        if (remaining > 0 && sameCityMerchantIds != null && !sameCityMerchantIds.isEmpty()) {
+        if (remaining > 0 && !sameCityMerchantIds.isEmpty()) {
             List<Integer> cityOnly = new java.util.ArrayList<>();
             for (Integer id : sameCityMerchantIds) {
-                if (!sameSchoolMerchantIdsFinal.contains(id) && !cityOnly.contains(id)) {
+                if (!sameSchoolMerchantIds.contains(id) && !cityOnly.contains(id)) {
                     cityOnly.add(id);
                 }
             }
             if (!cityOnly.isEmpty()) {
                 Page<Product> p2 = productRepository.findByStore_MerchantIdIn(cityOnly, PageRequest.of(0, remaining, Sort.by(Sort.Direction.DESC, "id")));
-                List<ProductVO> vos2 = p2.getContent().stream().map(Product::toVO).collect(Collectors.toList());
+                List<ProductVO> vos2 = p2.getContent().stream().map(Product::toVO).toList();
                 for (ProductVO vo : vos2) {
                     if (remaining <= 0) break;
                     // 防止重复
@@ -434,7 +421,7 @@ public class ProductServiceImpl implements ProductService {
         // 其他商品补齐（不限制商家）
         if (remaining > 0) {
             Page<Product> others = productRepository.findAll(PageRequest.of(0, remaining, Sort.by(Sort.Direction.DESC, "id")));
-            List<ProductVO> vos = others.getContent().stream().map(Product::toVO).collect(Collectors.toList());
+            List<ProductVO> vos = others.getContent().stream().map(Product::toVO).toList();
             for (ProductVO vo : vos) {
                 if (remaining <= 0) break;
                 // 简单去重：避免加入重复 productId
@@ -507,7 +494,7 @@ public class ProductServiceImpl implements ProductService {
         if (currentRole == UserRole.MERCHANT && currentUserId != null) {
             // 获取该商家的所有店铺ID，过滤出属于这些店铺的商品
             List<Store> stores = storeRepository.findByMerchantId(currentUserId);
-            java.util.Set<Integer> storeIds = stores.stream().map(s -> s.getId()).collect(Collectors.toSet());
+            java.util.Set<Integer> storeIds = stores.stream().map(Store::getId).collect(Collectors.toSet());
             allMatchedProducts = allMatchedProducts.stream()
                 .filter(p -> p.getStoreId() != null && storeIds.contains(p.getStoreId()))
                 .collect(Collectors.toList());

@@ -24,7 +24,9 @@ public class TokenHandshakeHandler extends DefaultHandshakeHandler {
     }
 
     @Override
-    protected Principal determineUser(ServerHttpRequest request, WebSocketHandler wsHandler, Map<String, Object> attributes) {
+    protected Principal determineUser(@org.springframework.lang.NonNull ServerHttpRequest request,
+                                     @org.springframework.lang.NonNull WebSocketHandler wsHandler,
+                                     @org.springframework.lang.NonNull Map<String, Object> attributes) {
         try {
             // 尝试从 header 中取 token
             List<String> tokens = request.getHeaders().get("token");

@@ -20,7 +20,7 @@ public class ReplyController {
      * 发表回复
      */
     @PostMapping
-    public Response createReply(@RequestBody @Valid ReplyCreateVO replyVO,
+    public Response<ReplyVO> createReply(@RequestBody @Valid ReplyCreateVO replyVO,
                                 @RequestAttribute("userId") Integer userId) {
         ReplyVO reply = replyService.createReply(replyVO, userId);
         return Response.buildSuccess(reply);
@@ -30,7 +30,7 @@ public class ReplyController {
      * 删除回复
      */
     @DeleteMapping("/{replyId}")
-    public Response deleteReply(@PathVariable Integer replyId,
+    public Response<String> deleteReply(@PathVariable Integer replyId,
                                 @RequestAttribute("userId") Integer userId) {
         replyService.deleteReply(replyId, userId);
         return Response.buildSuccess("回复删除成功");
@@ -40,7 +40,7 @@ public class ReplyController {
      * 获取帖子的回复列表
      */
     @GetMapping("/post/{postId}")
-    public Response getRepliesByPost(@PathVariable Integer postId,
+    public Response<Page<ReplyVO>> getRepliesByPost(@PathVariable Integer postId,
                                      @RequestParam(defaultValue = "0") int page,
                                      @RequestParam(defaultValue = "20") int size) {
         Page<ReplyVO> replies = replyService.getRepliesByPost(postId, page, size);
@@ -51,7 +51,7 @@ public class ReplyController {
      * 点赞回复
      */
     @PostMapping("/{replyId}/like")
-    public Response likeReply(@PathVariable Integer replyId,
+    public Response<ReplyVO> likeReply(@PathVariable Integer replyId,
                               @RequestAttribute("userId") Integer userId) {
         ReplyVO reply = replyService.likeReply(replyId, userId);
         return Response.buildSuccess(reply);

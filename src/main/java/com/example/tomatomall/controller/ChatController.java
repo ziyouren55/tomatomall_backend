@@ -72,7 +72,7 @@ public class ChatController {
         if (currentUserId == null) throw TomatoMallException.notLogin();
 
         // 验证会话权限（senderRole由后端确定）
-        ChatSessionVO session = chatService.getChatSession(sessionId, currentUserId);
+        chatService.getChatSession(sessionId, currentUserId);
 
         ChatMessage message = chatService.sendMessage(sessionId, currentUserId,
                                                     request.getContent(), request.getMessageType());

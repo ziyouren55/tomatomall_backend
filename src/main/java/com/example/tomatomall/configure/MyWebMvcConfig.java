@@ -22,7 +22,7 @@ public class MyWebMvcConfig implements WebMvcConfigurer {
     LoginInterceptor loginInterceptor;
 
     @Override
-    public void addInterceptors(InterceptorRegistry registry) {
+    public void addInterceptors(@org.springframework.lang.NonNull InterceptorRegistry registry) {
         registry.addInterceptor(loginInterceptor)
                 .addPathPatterns("/**")
                 // 排除不需要登录的公开接口

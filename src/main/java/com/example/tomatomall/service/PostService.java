@@ -4,8 +4,6 @@ import com.example.tomatomall.vo.post.PostCreateVO;
 import com.example.tomatomall.vo.post.PostVO;
 import org.springframework.data.domain.Page;
 
-import java.util.List;
-
 public interface PostService {
     // 发布帖子
     PostVO createPost(PostCreateVO postVO, Integer userId);

@@ -38,14 +38,15 @@ public class OssUtil {
             PutObjectRequest putObjectRequest = new PutObjectRequest(bucketName, objectName, inputStream);
             // 上传文件
             ossClient.putObject(putObjectRequest);
+
+            // 生成一个带签名的URL，并截取掉多余参数，获取外链
+            return ossClient.generatePresignedUrl(bucketName, objectName, new Date(System.currentTimeMillis() + 3600L * 1000))
+                    .toString()
+                    .split("\\?Expires")[0];
         } finally {
             if (ossClient != null) {
                 ossClient.shutdown();
             }
         }
-        // 生成一个带签名的URL，并截取掉多余参数，获取外链
-        return ossClient.generatePresignedUrl(bucketName, objectName, new Date(System.currentTimeMillis() + 3600L * 1000))
-                .toString()
-                .split("\\?Expires")[0];
     }
 }
