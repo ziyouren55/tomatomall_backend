@@ -29,6 +29,11 @@ public interface ProductRepository extends JpaRepository<Product,Integer>
     Page<Product> findByStoreId(Integer storeId, Pageable pageable);
 
     /**
+     * 根据多个店铺ID查询商品
+     */
+    List<Product> findByStoreIdIn(List<Integer> storeIds);
+
+    /**
      * 搜索商品：根据关键词在标题、描述、详情中搜索
      * 使用模糊匹配，支持部分匹配
      */

@@ -1,6 +1,7 @@
 package com.example.tomatomall.service;
 
 import com.example.tomatomall.vo.coupon.CouponVO;
+import com.example.tomatomall.vo.coupon.IssueChatCouponVO;
 import com.example.tomatomall.vo.coupon.UserCouponVO;
 
 import java.util.List;
@@ -23,4 +24,9 @@ public interface CouponService {
     // 新增管理员方法
     UserCouponVO issueCouponToUser(Integer couponId, Integer userId, String remark);
     Integer issueCouponToAllUsers(Integer couponId, String remark);
+
+    // 商家聊天优惠券功能
+    UserCouponVO createAndIssueChatCoupon(Integer merchantId, IssueChatCouponVO request);
+    boolean validateMerchantProductPermission(Integer merchantId, Integer productId);
+    List<UserCouponVO> getCouponsIssuedByMerchant(Integer merchantId);
 }

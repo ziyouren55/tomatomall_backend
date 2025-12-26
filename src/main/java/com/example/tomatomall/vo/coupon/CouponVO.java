@@ -1,5 +1,6 @@
 package com.example.tomatomall.vo.coupon;
 
+import com.example.tomatomall.enums.CouponType;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
@@ -21,4 +22,5 @@ public class CouponVO {
     private Date validFrom;
     private Date validTo;
     private Boolean isActive;
+    private CouponType type;
 }

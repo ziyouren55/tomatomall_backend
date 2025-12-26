@@ -611,4 +611,32 @@ public class ProductServiceImpl implements ProductService {
         }
         return score;
     }
+
+    @Override
+    public List<ProductVO> getProductsByMerchantId(Integer merchantId) {
+        // 参数验证
+        if (merchantId == null) {
+            throw new IllegalArgumentException("商家ID不能为空");
+        }
+
+        // 获取商家所有店铺
+        List<Store> stores = storeRepository.findByMerchantId(merchantId);
+        if (stores.isEmpty()) {
+            return java.util.Collections.emptyList();
+        }
+
+        // 获取店铺ID列表
+        List<Integer> storeIds = stores.stream()
+                .map(Store::getId)
+                .collect(Collectors.toList());
+
+        // 获取所有店铺的商品，按ID降序排列（保持与其他查询一致）
+        List<Product> products = productRepository.findByStoreIdIn(storeIds);
+        products.sort((p1, p2) -> Integer.compare(p2.getId(), p1.getId())); // 降序排列
+
+        // 转换为VO
+        return products.stream()
+                .map(Product::toVO)
+                .collect(Collectors.toList());
+    }
 }

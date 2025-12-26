@@ -1,5 +1,6 @@
 package com.example.tomatomall.po;
 
+import com.example.tomatomall.enums.CouponType;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
@@ -44,6 +45,10 @@ public class Coupon {
 
     @Column(name = "is_active", nullable = false)
     private Boolean isActive = true;
+
+    @Convert(converter = com.example.tomatomall.converter.CouponTypeConverter.class)
+    @Column(name = "type", nullable = false)
+    private CouponType type = CouponType.REPEAT;
 
     @Column(name = "create_time")
     private Date createTime;

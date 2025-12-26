@@ -34,4 +34,23 @@ public class UserCoupon {
 
     @Column(name = "create_time", nullable = false)
     private Date createTime;
+
+    @Column(name = "product_id")
+    private Integer productId; // 限制使用的商品ID，为null表示无限制
+
+    @Column(name = "merchant_id")
+    private Integer merchantId; // 发放优惠券的商家ID
+
+    @Column(name = "issued_remark")
+    private String issuedRemark; // 发放时的备注信息
+
+    // 便捷方法：检查优惠券是否有商品限制
+    public boolean hasProductRestriction() {
+        return productId != null;
+    }
+
+    // 便捷方法：检查优惠券是否可用于指定商品
+    public boolean canUseForProduct(Integer productId) {
+        return this.productId == null || this.productId.equals(productId);
+    }
 }

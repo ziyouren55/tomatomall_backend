@@ -1,11 +1,13 @@
 package com.example.tomatomall.service.serviceImpl;
 
+import com.example.tomatomall.enums.CouponType;
 import com.example.tomatomall.exception.TomatoMallException;
 import com.example.tomatomall.po.*;
 import com.example.tomatomall.repository.*;
 import com.example.tomatomall.service.CouponService;
 import com.example.tomatomall.util.MyBeanUtil;
 import com.example.tomatomall.vo.coupon.CouponVO;
+import com.example.tomatomall.vo.coupon.IssueChatCouponVO;
 import com.example.tomatomall.vo.coupon.UserCouponVO;
 import org.springframework.beans.BeanUtils;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -39,6 +41,18 @@ public class CouponServiceImpl implements CouponService
     @Autowired
     private AccountRepository accountRepository;
 
+    @Autowired
+    private OrderItemRepository orderItemRepository;
+
+    @Autowired
+    private ChatSessionRepository chatSessionRepository;
+
+    @Autowired
+    private ProductRepository productRepository;
+
+    @Autowired
+    private StoreRepository storeRepository;
+
     // 获取所有优惠券
     @Override
     public List<CouponVO> getAllCoupons() {
@@ -58,7 +72,9 @@ public class CouponServiceImpl implements CouponService
     @Override
     public List<CouponVO> getAvailableCoupons() {
         Date now = new Date();
-        List<Coupon> coupons = couponRepository.findByIsActiveTrueAndValidFromBeforeAndValidToAfter(now, now);
+        // 只返回可重复兑换的优惠券（type = REPEAT），排除私人优惠券
+        // 使用大写枚举值进行查询，确保兼容性
+        List<Coupon> coupons = couponRepository.findByIsActiveTrueAndTypeAndValidFromBeforeAndValidToAfter(CouponType.REPEAT, now, now);
         return coupons.stream().map(this::convertToVO).collect(Collectors.toList());
     }
 
@@ -67,6 +83,16 @@ public class CouponServiceImpl implements CouponService
     public CouponVO createCoupon(CouponVO couponVO) {
         Coupon coupon = new Coupon();
         BeanUtils.copyProperties(couponVO, coupon);
+
+        // 标准化优惠券类型：统一转换为大写，确保数据库存储一致性
+        // 支持前端传入各种格式（repeat, REPEAT, private, PRIVATE等）
+        if (coupon.getType() != null) {
+            coupon.setType(CouponType.fromValue(coupon.getType().name().toUpperCase()));
+        } else {
+            // 默认设置为REPEAT类型（兼容旧数据）
+            coupon.setType(CouponType.REPEAT);
+        }
+
         coupon.setCreateTime(new Date());
         couponRepository.save(coupon);
         return convertToVO(coupon);
@@ -174,8 +200,8 @@ public class CouponServiceImpl implements CouponService
             throw new TomatoMallException("只能对待支付订单使用优惠券");
         }
 
-        // 5. 获取优惠券详情
-        Coupon coupon = couponRepository.findById(couponId)
+        // 5. 获取优惠券详情和验证有效性
+        Coupon coupon = couponRepository.findById(userCoupon.getCouponId())
             .orElseThrow(() -> new TomatoMallException("优惠券不存在"));
 
         Date now = new Date();
@@ -183,33 +209,41 @@ public class CouponServiceImpl implements CouponService
             throw new TomatoMallException("优惠券未生效");
         }
 
-        if(coupon.getValidFrom().after(now))
-        {
+        if(coupon.getValidFrom().after(now)) {
             throw new TomatoMallException("优惠券未到达指定时间");
         }
 
-        if(coupon.getValidTo().before(now))
-        {
+        if(coupon.getValidTo().before(now)) {
             throw new TomatoMallException("优惠券已过期");
         }
 
+        BigDecimal discountAmount = coupon.getDiscountAmount();
+        BigDecimal minimumPurchase = coupon.getMinimumPurchase();
+        BigDecimal discountPercentage = coupon.getDiscountPercentage();
+
         // 6. 验证优惠券是否满足最低消费
-        if (coupon.getMinimumPurchase() != null &&
-            order.getTotalAmount().compareTo(coupon.getMinimumPurchase()) < 0) {
+        if (minimumPurchase != null &&
+            order.getTotalAmount().compareTo(minimumPurchase) < 0) {
             throw new TomatoMallException("订单金额未达到优惠券使用条件");
         }
 
+        // 6.5. 验证商品限制（如果优惠券有商品限制）
+        if (userCoupon.hasProductRestriction()) {
+            validateCouponProductRestriction(userCoupon, orderId);
+        }
+
         // 7. 应用优惠券并更新订单金额
-        BigDecimal discountAmount = BigDecimal.ZERO;
-        if (coupon.getDiscountAmount() != null) {
-            discountAmount = coupon.getDiscountAmount();
-        } else if (coupon.getDiscountPercentage() != null) {
-            discountAmount = order.getTotalAmount()
-                .multiply(coupon.getDiscountPercentage())
+        BigDecimal actualDiscountAmount = BigDecimal.ZERO;
+
+        if (discountAmount != null) {
+            actualDiscountAmount = discountAmount;
+        } else if (discountPercentage != null) {
+            actualDiscountAmount = order.getTotalAmount()
+                .multiply(discountPercentage)
                 .divide(new BigDecimal("100"), 2, BigDecimal.ROUND_HALF_UP);
         }
 
-        BigDecimal newAmount = order.getTotalAmount().subtract(discountAmount);
+        BigDecimal newAmount = order.getTotalAmount().subtract(actualDiscountAmount);
         if (newAmount.compareTo(BigDecimal.ZERO) < 0) {
             newAmount = BigDecimal.ZERO;
         }
@@ -337,19 +371,145 @@ public class CouponServiceImpl implements CouponService
         BeanUtils.copyProperties(userCoupon, vo);
 
         // 添加优惠券详情
-        Optional<Coupon> coupon = couponRepository.findById(userCoupon.getCouponId());
-        if (coupon.isPresent()) {
-            vo.setCouponName(coupon.get().getName());
-            vo.setCouponDescription(coupon.get().getDescription());
-            vo.setDiscountAmount(coupon.get().getDiscountAmount());
-            vo.setDiscountPercentage(coupon.get().getDiscountPercentage());
-            vo.setMinimumPurchase(coupon.get().getMinimumPurchase());
-            vo.setPointsRequired(coupon.get().getPointsRequired());
-            vo.setValidFrom(coupon.get().getValidFrom());
-            vo.setValidTo(coupon.get().getValidTo());
-            vo.setIsActive(coupon.get().getIsActive());
+        if (userCoupon.getCouponId() != null) {
+            // 从Coupon模板获取信息
+            Optional<Coupon> coupon = couponRepository.findById(userCoupon.getCouponId());
+            if (coupon.isPresent()) {
+                vo.setCouponName(coupon.get().getName());
+                vo.setCouponDescription(coupon.get().getDescription());
+                vo.setDiscountAmount(coupon.get().getDiscountAmount());
+                vo.setDiscountPercentage(coupon.get().getDiscountPercentage());
+                vo.setMinimumPurchase(coupon.get().getMinimumPurchase());
+                vo.setPointsRequired(coupon.get().getPointsRequired());
+                vo.setValidFrom(coupon.get().getValidFrom());
+                vo.setValidTo(coupon.get().getValidTo());
+                vo.setIsActive(coupon.get().getIsActive());
+                // 确保返回的类型总是枚举值
+                vo.setType(coupon.get().getType());
+            }
         }
 
         return vo;
+    }
+
+    /**
+     * 创建私人优惠券模板（商家在聊天中发放的优惠券）
+     */
+    private CouponVO createPrivateCouponTemplate(IssueChatCouponVO request, Integer merchantId) {
+        CouponVO couponVO = new CouponVO();
+
+        // 获取商品信息用于优惠券命名
+        Optional<Product> productOpt = productRepository.findById(request.getProductId());
+        String productName = productOpt.isPresent() ? productOpt.get().getTitle() : "指定商品";
+
+        // 设置优惠券基本信息
+        couponVO.setName(productName + "专属优惠券");
+        couponVO.setDescription("商家在聊天中发放的专属优惠券，仅限" + productName + "使用");
+        couponVO.setDiscountAmount(request.getDiscountAmount());
+        couponVO.setDiscountPercentage(request.getDiscountPercentage());
+        couponVO.setMinimumPurchase(request.getMinimumPurchase());
+        couponVO.setPointsRequired(0); // 私人优惠券不需要积分
+        couponVO.setType(CouponType.PRIVATE); // 标记为私人优惠券
+
+        // 设置有效期
+        Date now = new Date();
+        couponVO.setValidFrom(now);
+        couponVO.setValidTo(new Date(now.getTime() + (request.getValidDays() * 24 * 60 * 60 * 1000L)));
+
+        couponVO.setIsActive(true);
+
+        return couponVO;
+    }
+
+    // 商家聊天优惠券功能实现
+    @Override
+    @Transactional
+    public UserCouponVO createAndIssueChatCoupon(Integer merchantId, IssueChatCouponVO request) {
+        // 1. 验证商家权限
+        if (!validateMerchantProductPermission(merchantId, request.getProductId())) {
+            throw new TomatoMallException("您没有权限为此商品发放优惠券");
+        }
+
+        // 2. 获取聊天会话信息，确认客户身份
+        Optional<ChatSession> sessionOpt = chatSessionRepository.findById(request.getSessionId());
+        if (!sessionOpt.isPresent()) {
+            throw new TomatoMallException("聊天会话不存在");
+        }
+
+        ChatSession session = sessionOpt.get();
+        if (!session.getMerchantId().equals(merchantId)) {
+            throw new TomatoMallException("您不是此会话的商家");
+        }
+
+        Integer customerId = session.getCustomerId();
+
+        // 3. 创建私人优惠券模板（type = "private"）
+        CouponVO privateCouponVO = createPrivateCouponTemplate(request, merchantId);
+        CouponVO createdCoupon = createCoupon(privateCouponVO);
+
+        // 4. 发放优惠券给用户
+        UserCouponVO userCoupon = issueCouponToUser(createdCoupon.getId(), customerId, request.getRemark());
+
+        // 5. 设置商品限制和商家信息
+        Optional<UserCoupon> userCouponEntityOpt = userCouponRepository.findById(userCoupon.getId());
+        if (userCouponEntityOpt.isPresent()) {
+            UserCoupon userCouponEntity = userCouponEntityOpt.get();
+            userCouponEntity.setProductId(request.getProductId());
+            userCouponEntity.setMerchantId(merchantId);
+            userCouponEntity.setIssuedRemark(request.getRemark());
+            userCouponRepository.save(userCouponEntity);
+
+            // 更新VO
+            userCoupon.setProductId(request.getProductId());
+            userCoupon.setMerchantId(merchantId);
+            userCoupon.setIssuedRemark(request.getRemark());
+        }
+
+        return userCoupon;
+    }
+
+    @Override
+    public boolean validateMerchantProductPermission(Integer merchantId, Integer productId) {
+        // 获取商品信息
+        Optional<Product> productOpt = productRepository.findById(productId);
+        if (!productOpt.isPresent()) {
+            return false;
+        }
+
+        Product product = productOpt.get();
+
+        // 检查商品是否属于该商家的店铺
+        return product.getStoreId() != null &&
+               storeRepository.existsByIdAndMerchantId(product.getStoreId(), merchantId);
+    }
+
+    @Override
+    public List<UserCouponVO> getCouponsIssuedByMerchant(Integer merchantId) {
+        List<UserCoupon> userCoupons = userCouponRepository.findByMerchantId(merchantId);
+        return userCoupons.stream()
+                .map(this::convertToVO)
+                .collect(Collectors.toList());
+    }
+
+
+
+    /**
+     * 验证优惠券的商品限制
+     */
+    private void validateCouponProductRestriction(UserCoupon userCoupon, Integer orderId) {
+        // 获取订单中的商品项
+        List<OrderItem> orderItems = orderItemRepository.findByOrderId(orderId);
+
+        // 检查订单中是否包含限制的商品
+        boolean hasRestrictedProduct = orderItems.stream()
+            .anyMatch(item -> userCoupon.canUseForProduct(item.getProductId()));
+
+        if (!hasRestrictedProduct) {
+            // 获取商品名称用于错误提示
+            Optional<Product> productOpt = productRepository.findById(userCoupon.getProductId());
+            String productName = productOpt.isPresent() ? productOpt.get().getTitle() : "指定商品";
+
+            throw new TomatoMallException("该优惠券只能用于商品：" + productName);
+        }
     }
 }

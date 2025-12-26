@@ -10,6 +10,7 @@ import java.util.List;
 public interface StoreRepository extends JpaRepository<Store, Integer> {
     List<Store> findByMerchantId(Integer merchantId);
     Page<Store> findByMerchantId(Integer merchantId, Pageable pageable);
+    boolean existsByIdAndMerchantId(Integer storeId, Integer merchantId);
 }
 
 

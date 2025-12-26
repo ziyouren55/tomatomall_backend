@@ -6,6 +6,8 @@ import com.example.tomatomall.vo.products.SearchResultVO;
 import com.example.tomatomall.vo.products.RecommendSearchResultVO;
 import com.example.tomatomall.vo.products.StockpileVO;
 
+import java.util.List;
+
 public interface ProductService
 {
     /**
@@ -63,4 +65,9 @@ public interface ProductService
      * 获取附近推荐（同校优先 -> 同城 -> 其他），要求用户已通过学校认证
      */
     RecommendSearchResultVO getNearbyRecommendations(Integer page, Integer pageSize);
+
+    /**
+     * 根据商家ID获取该商家的所有商品（用于优惠券发放）
+     */
+    List<ProductVO> getProductsByMerchantId(Integer merchantId);
 }

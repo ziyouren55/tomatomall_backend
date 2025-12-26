@@ -7,6 +7,10 @@ import lombok.Setter;
 import java.math.BigDecimal;
 import java.util.Date;
 
+import org.apache.kafka.common.protocol.types.Field.Str;
+
+import com.example.tomatomall.enums.CouponType;
+
 @Setter
 @Getter
 @NoArgsConstructor
@@ -26,4 +30,8 @@ public class UserCouponVO {
     private Date validFrom;
     private Date validTo;
     private Boolean isActive;
+    private Integer productId;
+    private Integer merchantId;
+    private String issuedRemark;
+    private CouponType type;
 }
